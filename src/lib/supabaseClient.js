@@ -1,6 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://dtewmgsfjdbobxgtjpie.supabase.co'
-const supabasePublishableKey = 'sb_publishable_o48eEv1_TyvWTO0ReabT0A_1sZ91X_o'
+// Codul va încerca să ia datele din Environment Variables (Vercel sau .env local)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabasePublishableKey)
+// Verificare rapidă: dacă lipsesc, te anunță în consolă
+if (!supabaseUrl || !supabaseAnonKey) {
+    console.error("⚠️ Lipsesc cheile Supabase! Verifică variabilele de mediu.");
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
