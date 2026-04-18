@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-olive: #556B2F;
+  --color-brand-lila: #967BB6;
+  --color-brand-cream: #FAF9F6;
+  --color-dark-bg: #121212;
+  --color-dark-card: #1E1E1E;
+}
+
+:root {
+  background-color: #FAF9F6;
+  /* Cream-ul nostru */
+  color: #0f172a;
+}
+
+.dark {
+  background-color: #121212;
+  color: #f1f5f9;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+}
