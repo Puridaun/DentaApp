@@ -28,6 +28,7 @@ export default function TreatmentSection({
   continueFrom,
   currentDoctorName,
   setIsFisaOpen,
+  darkMode, // Asigură-te că primești acest prop din PatientDetailsPage
 }) {
   const [step, setStep] = useState(continueFrom ? 2 : 1);
   const [selectedTeeth, setSelectedTeeth] = useState(
@@ -59,7 +60,6 @@ export default function TreatmentSection({
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
     const finalName = isCustom ? newT.customName : newT.name;
 
     const { error } = await supabase.from("treatments").insert([
@@ -76,7 +76,7 @@ export default function TreatmentSection({
         treatment_time: newT.time,
         parent_id: continueFrom ? continueFrom.id : null,
         doctor_id: user.id,
-        fisa_snapshot: currentPatient, // Aici salvăm starea fișei din acest moment
+        fisa_snapshot: currentPatient,
       },
     ]);
 
@@ -91,20 +91,26 @@ export default function TreatmentSection({
   };
 
   return (
-    <div className="p-4 md:p-8 bg-white rounded-[2rem] border-2 border-slate-100 shadow-sm text-left animate-in fade-in duration-500">
+    <div
+      className={`p-5 md:p-10 rounded-[2.5rem] border-2 transition-all duration-300 text-left animate-in fade-in ${
+        darkMode
+          ? "bg-[#1E293B] border-slate-800 text-white"
+          : "bg-white border-slate-50 shadow-sm text-slate-800"
+      }`}
+    >
       {/* INDICATOR PASI */}
-      <div className="flex gap-1 mb-8">
+      <div className="flex gap-2 mb-10">
         {[1, 2, 3].map((s) => (
           <div
             key={s}
-            className={`h-1 flex-1 rounded-full ${step >= s ? "bg-[#556B2F]" : "bg-slate-100"}`}
+            className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${step >= s ? "bg-olive-base" : darkMode ? "bg-slate-800" : "bg-slate-100"}`}
           />
         ))}
       </div>
 
       {/* PAS 1: SELECTIE MANOPERA */}
       {step === 1 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in slide-in-from-bottom-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-bottom-2">
           {proceduresList.map((p) => (
             <button
               key={p}
@@ -117,7 +123,11 @@ export default function TreatmentSection({
                   setStep(2);
                 }
               }}
-              className="p-5 rounded-2xl border-2 border-slate-50 text-sm font-bold text-slate-600 hover:border-[#556B2F] hover:bg-[#556B2F]/5 transition-all text-left"
+              className={`p-6 rounded-2xl border-2 text-[13px] font-bold uppercase tracking-widest transition-all text-left ${
+                darkMode
+                  ? "border-slate-800 bg-slate-900/50 text-slate-300 hover:border-olive-base hover:text-white"
+                  : "border-slate-50 text-slate-600 hover:border-olive-base hover:bg-olive-base/5"
+              }`}
             >
               {p}
             </button>
@@ -125,10 +135,10 @@ export default function TreatmentSection({
         </div>
       )}
 
-      {/* PAS 1.5: NUME CUSTOM (DOAR DACA A ALES ALTA PROCEDURA) */}
+      {/* PAS 1.5: CUSTOM NAME */}
       {step === 1.5 && (
-        <div className="animate-in fade-in space-y-4">
-          <label className="text-[10px] font-black uppercase text-slate-400">
+        <div className="animate-in fade-in space-y-6">
+          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
             Introdu numele manoperei
           </label>
           <input
@@ -136,43 +146,47 @@ export default function TreatmentSection({
             type="text"
             value={newT.customName}
             onChange={(e) => setNewT({ ...newT, customName: e.target.value })}
-            className="w-full p-4 rounded-xl border-2 border-slate-100 outline-none focus:border-[#556B2F]"
+            className={`w-full p-5 rounded-2xl border-2 outline-none transition-all ${
+              darkMode
+                ? "bg-slate-900 border-slate-800 focus:border-olive-base text-white"
+                : "bg-slate-50 border-slate-100 focus:border-olive-base"
+            }`}
             placeholder="Ex: Reconstrucție pivot..."
           />
           <button
             onClick={() => setStep(2)}
-            className="w-full bg-[#556B2F] text-white py-4 rounded-xl font-bold uppercase text-[10px]"
+            className="w-full bg-olive-base text-white py-5 rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-lg shadow-olive-base/20"
           >
             Continuă la dinți
           </button>
         </div>
       )}
 
-      {/* PAS 2: SELECTIE DINTI SI UPDATE FISA */}
+      {/* PAS 2: SELECTIE DINTI */}
       {step === 2 && (
-        <div className="animate-in fade-in space-y-6">
+        <div className="animate-in fade-in space-y-8">
           <div className="flex justify-between items-center">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-[#556B2F]">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-olive-base">
               Pas 2: Selectează Dinții
             </h3>
             <button
               onClick={() => setStep(1)}
-              className="text-[10px] font-bold text-slate-400 flex items-center gap-1 hover:text-slate-600"
+              className="text-[10px] font-bold text-slate-500 flex items-center gap-1 hover:text-olive-base"
             >
               <ChevronLeft size={14} /> Schimbă manopera
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {cadrane.map((c) => (
               <div
                 key={c.id}
-                className="p-4 rounded-2xl border-2 border-slate-50 bg-slate-50/30"
+                className={`p-6 rounded-[2rem] border ${darkMode ? "bg-slate-900/40 border-slate-800" : "bg-slate-50/50 border-slate-100"}`}
               >
-                <p className="text-[9px] font-black text-slate-400 uppercase mb-3 tracking-widest">
+                <p className="text-[10px] font-black text-slate-500 uppercase mb-5 tracking-widest">
                   {c.label}
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2.5">
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((d) => {
                     const id = `${c.id}${d}`;
                     const sel = selectedTeeth.includes(id);
@@ -184,7 +198,13 @@ export default function TreatmentSection({
                             sel ? s.filter((x) => x !== id) : [...s, id],
                           )
                         }
-                        className={`w-9 h-9 rounded-xl border-2 flex items-center justify-center text-[11px] font-black transition-all ${sel ? "bg-[#556B2F] text-white border-[#556B2F] shadow-lg shadow-[#556B2F]/20" : "bg-white text-slate-300 border-slate-100"}`}
+                        className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center text-xs font-black transition-all ${
+                          sel
+                            ? "bg-olive-base text-white border-olive-base shadow-lg shadow-olive-base/20"
+                            : darkMode
+                              ? "bg-slate-800 text-slate-600 border-slate-700"
+                              : "bg-white text-slate-300 border-slate-100"
+                        }`}
                       >
                         {id}
                       </button>
@@ -195,151 +215,124 @@ export default function TreatmentSection({
             ))}
           </div>
 
-          {/* BOX ALERT PENTRU FISA */}
-          <div className="bg-amber-50 p-5 rounded-2xl border-2 border-amber-100 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-amber-100 p-2 rounded-full text-amber-600">
-                <AlertCircle size={20} />
-              </div>
+          <div
+            className={`p-6 rounded-[2rem] border flex items-center justify-between gap-4 ${darkMode ? "bg-amber-500/5 border-amber-500/20" : "bg-amber-50 border-amber-100"}`}
+          >
+            <div className="flex items-center gap-4">
+              <AlertCircle size={24} className="text-amber-500" />
               <div>
-                <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">
+                <p
+                  className={`text-[10px] font-black uppercase tracking-widest ${darkMode ? "text-amber-400" : "text-amber-800"}`}
+                >
                   Actualizare Fișă Clinică
                 </p>
-                <p className="text-[11px] text-amber-600 font-medium">
-                  S-a schimbat ceva în starea de sănătate a pacientului?
+                <p
+                  className={`text-[11px] font-medium ${darkMode ? "text-amber-500/70" : "text-amber-600"}`}
+                >
+                  S-a schimbat ceva în starea de sănătate?
                 </p>
               </div>
             </div>
             <button
               onClick={() => setIsFisaOpen(true)}
-              className="bg-white border-2 border-amber-200 text-amber-700 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-amber-100 transition-all flex items-center gap-2"
+              className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${darkMode ? "bg-amber-500/20 text-amber-400" : "bg-white border-2 border-amber-200 text-amber-700 hover:bg-amber-100"}`}
             >
-              <FileText size={14} /> Modifică Fișa acum
+              <FileText size={14} className="inline mr-2" /> Modifică Fișa
             </button>
           </div>
 
           <button
             onClick={() => setStep(3)}
             disabled={selectedTeeth.length === 0}
-            className={`w-full py-4 rounded-2xl font-bold uppercase text-[10px] tracking-widest transition-all ${selectedTeeth.length > 0 ? "bg-[#556B2F] text-white shadow-lg" : "bg-slate-100 text-slate-300"}`}
+            className={`w-full py-5 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] transition-all ${selectedTeeth.length > 0 ? "bg-olive-base text-white shadow-xl shadow-olive-base/20" : darkMode ? "bg-slate-800 text-slate-600" : "bg-slate-100 text-slate-300"}`}
           >
             Continuă la Detalii Financiare
           </button>
         </div>
       )}
 
-      {/* PAS 3: COSTURI SI SALVARE FINALA */}
+      {/* PAS 3: FINALIZARE */}
       {step === 3 && (
-        <div className="animate-in fade-in space-y-6">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-[#556B2F]">
+        <div className="animate-in fade-in space-y-8">
+          <div className="flex justify-between items-center">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-olive-base">
               Pas 3: Finalizare Vizită
             </h3>
             <button
               onClick={() => setStep(2)}
-              className="text-[10px] font-bold text-slate-400 flex items-center gap-1 hover:text-slate-600"
+              className="text-[10px] font-bold text-slate-500 flex items-center gap-1 hover:text-olive-base"
             >
               <ChevronLeft size={14} /> Înapoi la dinți
             </button>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-1">
-              <label className="text-[9px] font-bold text-slate-400 uppercase">
-                Cost Total (RON)
-              </label>
-              <input
-                type="number"
-                value={newT.cost}
-                onChange={(e) => setNewT({ ...newT, cost: e.target.value })}
-                className="w-full bg-slate-50 p-3 rounded-xl border border-slate-100 outline-none text-sm focus:border-[#556B2F]"
-                placeholder="0"
-              />
-            </div>
-            <div className="space-y-1 relative">
-              <label className="text-[9px] font-bold text-slate-400 uppercase">
-                Achitat (RON)
-              </label>
-              <input
-                type="number"
-                value={newT.paid}
-                onChange={(e) => setNewT({ ...newT, paid: e.target.value })}
-                className="w-full bg-slate-50 p-3 rounded-xl border border-slate-100 outline-none text-sm focus:border-[#556B2F]"
-                placeholder="0"
-              />
-              <div className="absolute -top-1 right-0 text-[7px] font-black text-red-500 uppercase">
-                Rest:{" "}
-                {(
-                  parseFloat(newT.cost || 0) - parseFloat(newT.paid || 0)
-                ).toFixed(0)}
+            {[
+              { l: "Cost Total (RON)", k: "cost" },
+              { l: "Achitat (RON)", k: "paid" },
+              { l: "Data", k: "date", t: "date" },
+              { l: "Ora", k: "time", t: "time" },
+            ].map((f) => (
+              <div key={f.k} className="space-y-2 relative">
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                  {f.l}
+                </label>
+                <input
+                  type={f.t || "number"}
+                  value={newT[f.k]}
+                  onChange={(e) => setNewT({ ...newT, [f.k]: e.target.value })}
+                  className={`w-full p-4 rounded-xl border transition-all text-sm outline-none focus:border-olive-base ${darkMode ? "bg-slate-900 border-slate-800 text-white" : "bg-slate-50 border-slate-100 text-slate-800"}`}
+                />
+                {f.k === "paid" && (
+                  <div className="absolute -top-1 right-0 text-[8px] font-black text-red-500 uppercase italic">
+                    Rest:{" "}
+                    {(
+                      parseFloat(newT.cost || 0) - parseFloat(newT.paid || 0)
+                    ).toFixed(0)}
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[9px] font-bold text-slate-400 uppercase">
-                Data
-              </label>
-              <input
-                type="date"
-                value={newT.date}
-                onChange={(e) => setNewT({ ...newT, date: e.target.value })}
-                className="w-full bg-slate-50 p-3 rounded-xl border border-slate-100 outline-none text-sm focus:border-[#556B2F]"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[9px] font-bold text-slate-400 uppercase">
-                Ora
-              </label>
-              <input
-                type="time"
-                value={newT.time}
-                onChange={(e) => setNewT({ ...newT, time: e.target.value })}
-                className="w-full bg-slate-50 p-3 rounded-xl border border-slate-100 outline-none text-sm focus:border-[#556B2F]"
-              />
-            </div>
+            ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <textarea
-              placeholder="Observații clinice (ce s-a lucrat)..."
+              placeholder="Observații clinice..."
               value={newT.note}
               onChange={(e) => setNewT({ ...newT, note: e.target.value })}
-              className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs min-h-[100px] outline-none focus:border-[#556B2F]"
+              className={`w-full p-5 rounded-[2rem] text-sm min-h-[120px] outline-none border transition-all focus:border-olive-base ${darkMode ? "bg-slate-900 border-slate-800 text-white" : "bg-slate-50 border-slate-100 text-slate-800"}`}
             />
             <textarea
-              placeholder="Indicații post-operatorii pentru pacient..."
+              placeholder="Indicații post-operatorii..."
               value={newT.meds}
               onChange={(e) => setNewT({ ...newT, meds: e.target.value })}
-              className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs min-h-[100px] outline-none focus:border-[#556B2F]"
+              className={`w-full p-5 rounded-[2rem] text-sm min-h-[120px] outline-none border transition-all focus:border-olive-base ${darkMode ? "bg-slate-900 border-slate-800 text-white" : "bg-slate-50 border-slate-100 text-slate-800"}`}
             />
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-50">
-            <div className="flex gap-6">
-              <label className="flex items-center gap-2 text-[10px] font-bold uppercase cursor-pointer">
-                <input
-                  type="radio"
-                  checked={newT.status === "Finalizată"}
-                  onChange={() => setNewT({ ...newT, status: "Finalizată" })}
-                  className="accent-[#556B2F] w-4 h-4"
-                />{" "}
-                Finalizată
-              </label>
-              <label className="flex items-center gap-2 text-[10px] font-bold uppercase cursor-pointer text-amber-600">
-                <input
-                  type="radio"
-                  checked={newT.status === "În lucru"}
-                  onChange={() => setNewT({ ...newT, status: "În lucru" })}
-                  className="accent-amber-500 w-4 h-4"
-                />{" "}
-                În Lucru
-              </label>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-8 border-t border-slate-500/10">
+            <div className="flex gap-8">
+              {["Finalizată", "În lucru"].map((s) => (
+                <label
+                  key={s}
+                  className={`flex items-center gap-3 text-[11px] font-black uppercase cursor-pointer tracking-widest ${s === "În lucru" ? "text-amber-500" : ""}`}
+                >
+                  <input
+                    type="radio"
+                    checked={newT.status === s}
+                    onChange={() => setNewT({ ...newT, status: s })}
+                    className={`w-5 h-5 ${s === "În lucru" ? "accent-amber-500" : "accent-olive-base"}`}
+                  />{" "}
+                  {s}
+                </label>
+              ))}
             </div>
 
             <button
               onClick={save}
-              className="w-full md:w-auto bg-[#556B2F] text-white px-12 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-[#556B2F]/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+              className="w-full md:w-auto bg-olive-base text-white px-10 py-5 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl shadow-olive-base/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
             >
-              <Check size={18} /> Salvează Manopera și Snapshot Fișă
+              <Check size={20} /> Salvează Vizita
             </button>
           </div>
         </div>

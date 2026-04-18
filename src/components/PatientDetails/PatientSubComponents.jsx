@@ -8,8 +8,8 @@ export const InfoItem = ({
   color,
   type = "text",
 }) => (
-  <div className="p-3 md:p-4 rounded-xl border-2 border-slate-100 bg-white shadow-sm text-left">
-    <label className="text-[8px] md:text-[9px] font-bold uppercase text-slate-400 block mb-1 tracking-widest">
+  <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-sm text-left w-full">
+    <label className="text-[9px] font-bold uppercase text-slate-400 block mb-1.5 tracking-widest">
       {label}
     </label>
     {isEditing ? (
@@ -17,11 +17,11 @@ export const InfoItem = ({
         type={type}
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-transparent border-b border-[#556B2F] outline-none text-xs py-1 text-slate-700"
+        className="w-full bg-transparent border-b border-olive-base outline-none text-sm py-1 text-slate-700"
       />
     ) : (
       <p
-        className={`text-xs md:text-sm font-medium ${color || "text-slate-700"}`}
+        className={`text-sm font-medium break-all ${color || "text-slate-700"}`}
       >
         {value || "-"}
       </p>
@@ -29,28 +29,31 @@ export const InfoItem = ({
   </div>
 );
 
+// TAB-URI UNIFORMIZATE: Font, Size și Tracking identic
 export const TabBtn = ({ active, label, onClick }) => (
   <button
     onClick={onClick}
-    className={`pb-3 text-[10px] font-bold uppercase tracking-widest relative transition-all ${active ? "text-[#556B2F]" : "text-slate-300"}`}
+    className={`pb-4 px-2 text-sm md:text-[13px] font-bold uppercase tracking-[0.15em] relative transition-all whitespace-nowrap ${
+      active ? "text-olive-base" : "text-slate-400 hover:text-slate-600"
+    }`}
   >
-    {label}{" "}
+    {label}
     {active && (
-      <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#556B2F] rounded-full" />
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-olive-base rounded-full" />
     )}
   </button>
 );
 
 export const InputBlock = ({ label, value, onChange, type = "text" }) => (
-  <div className="space-y-1 text-left">
-    <label className="text-[8px] font-bold uppercase text-slate-400">
+  <div className="space-y-1.5 text-left w-full">
+    <label className="text-[9px] font-bold uppercase text-slate-500 tracking-widest">
       {label}
     </label>
     <input
       type={type}
       value={value || ""}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full bg-slate-50 p-3 rounded-lg outline-none text-[10px] md:text-xs border border-slate-200 focus:border-[#556B2F]"
+      className="w-full bg-slate-50 p-4 rounded-xl outline-none text-sm border border-slate-200 focus:border-olive-base transition-all"
     />
   </div>
 );

@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { supabase } from "../../lib/supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 import { Loader2 } from "lucide-react";
 
-// Importuri componente din același folder
-import PatientHeader from "./PatientHeader";
-import { TabBtn } from "./PatientSubComponents";
-import FisaClinicaModal from "./FisaClinicaModal";
-import HistorySection from "./HistorySection";
-import TreatmentSection from "./TreatmentSection";
+// Importuri corectate și păstrate exact cum le-ai avut
+import PatientHeader from "../components/PatientDetails/PatientHeader";
+import { TabBtn } from "../components/PatientDetails/PatientSubComponents";
+import FisaClinicaModal from "../components/PatientDetails/FisaClinicaModal";
+import HistorySection from "../components/PatientDetails/HistorySection";
+import TreatmentSection from "../components/PatientDetails/TreatmentSection";
 
-export default function PatientDetails({ patientId, onBack, darkMode }) {
+export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
   const [patient, setPatient] = useState(null);
   const [activeSubTab, setActiveSubTab] = useState("istoric");
   const [loading, setLoading] = useState(true);
@@ -50,9 +50,7 @@ export default function PatientDetails({ patientId, onBack, darkMode }) {
     setLoading(false);
   }
 
-  // Funcție de salvare extinsă cu noile rubrici
   const handleUpdate = async (forceEdit = false) => {
-    // Dacă am apăsat "Edit" în modal, doar activăm modul editare
     if (forceEdit === true) {
       setIsEditingInfo(true);
       return;
@@ -70,14 +68,14 @@ export default function PatientDetails({ patientId, onBack, darkMode }) {
         antecedente_familiale: patient.antecedente_familiale,
         antecedente_personale: patient.antecedente_personale,
         medicatie_fond: patient.medicatie_fond,
-        examen_clinic: patient.examen_clinic, // NOU
-        investigatii: patient.investigatii, // NOU
+        examen_clinic: patient.examen_clinic,
+        investigatii: patient.investigatii,
       })
       .eq("id", patientId);
 
     if (!error) {
       setIsEditingInfo(false);
-      fetchPatientData(); // Refresh date
+      fetchPatientData();
     } else {
       console.error("Eroare la salvare:", error);
       alert("Eroare la salvarea datelor!");
@@ -96,7 +94,6 @@ export default function PatientDetails({ patientId, onBack, darkMode }) {
 
   return (
     <div className="p-2 md:p-8 max-w-7xl mx-auto text-left animate-in fade-in duration-500">
-      {/* HEADER: Identitate, Sold, Butoane Edit/Fisă */}
       <PatientHeader
         patient={patient}
         onBack={onBack}
@@ -108,33 +105,38 @@ export default function PatientDetails({ patientId, onBack, darkMode }) {
         setPatient={setPatient}
       />
 
-      {/* NAVIGARE: Tab-uri */}
       <div className="flex gap-6 border-b border-slate-200 mb-8 px-2 overflow-x-auto no-scrollbar">
         <TabBtn
           active={activeSubTab === "istoric"}
           label="Istoric Tratament"
           onClick={() => setActiveSubTab("istoric")}
         />
-        <TabBtn
-          active={activeSubTab === "manopere"}
-          label="+ Manoperă Nouă"
+        <button
+          className={`pb-4 px-2 text-sm md:text-base font-bold uppercase tracking-widest transition-all ${
+            activeSubTab === "manopere"
+              ? "text-[#556B2F] border-b-2 border-[#556B2F]"
+              : "text-slate-400 hover:text-slate-600"
+          }`}
           onClick={() => {
             setContinueFrom(null);
             setActiveSubTab("manopere");
           }}
-        />
+        >
+          + Manoperă Nouă
+        </button>
       </div>
 
-      {/* CONȚINUT: Istoric sau Formular */}
       <div className="px-2">
+        {/* REPARAȚIE: Trimitem un array gol [] dacă treatments nu există încă */}
         {activeSubTab === "istoric" && (
           <HistorySection
-            treatments={patient.treatments}
+            treatments={patient?.treatments || []}
             patient={patient}
             onContinue={(t) => {
               setContinueFrom(t);
               setActiveSubTab("manopere");
             }}
+            darkMode={darkMode}
           />
         )}
 
@@ -144,11 +146,11 @@ export default function PatientDetails({ patientId, onBack, darkMode }) {
             onUpdate={fetchPatientData}
             continueFrom={continueFrom}
             currentDoctorName={currentDoctorName}
+            darkMode={darkMode}
           />
         )}
       </div>
 
-      {/* MODAL: Fișa Clinică (Editabilă & Printabilă) */}
       <FisaClinicaModal
         isOpen={isFisaOpen}
         onClose={() => setIsFisaOpen(false)}
@@ -156,7 +158,7 @@ export default function PatientDetails({ patientId, onBack, darkMode }) {
         isEditing={isEditingInfo}
         setPatient={setPatient}
         darkMode={darkMode}
-        handleUpdate={handleUpdate} // Pasăm funcția de salvare
+        handleUpdate={handleUpdate}
       />
     </div>
   );

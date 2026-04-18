@@ -1,235 +1,152 @@
-import React, { useState } from "react";
+import React from "react";
 import {
-  Clock,
-  User,
   FileText,
-  X,
-  AlertCircle,
+  User,
   Calendar,
   Hash,
+  Banknote,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 
 export default function HistorySection({
-  treatments = [],
+  treatments,
   patient,
   onContinue,
+  darkMode,
 }) {
-  const [snapshot, setSnapshot] = useState(null);
-
-  // Sortăm evenimentele: cele mai noi să fie primele
-  const sortedEvents = [...(treatments || [])].sort((a, b) => {
-    return new Date(b.treatment_date) - new Date(a.treatment_date);
-  });
-
-  if (sortedEvents.length === 0) {
+  if (!treatments || treatments.length === 0) {
     return (
-      <div className="p-12 text-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-100 mx-4">
-        <AlertCircle className="mx-auto text-slate-300 mb-3" size={40} />
-        <p className="text-slate-500 font-medium">Nu există istoric medical.</p>
-        <p className="text-slate-400 text-xs mt-1">
-          Înregistrarea inițială și manoperele vor apărea aici.
-        </p>
+      <div className="text-slate-500 italic py-10 text-center border border-dashed border-slate-300 rounded-2xl">
+        Nu există istoric de tratament.
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 ml-4 border-l-2 border-slate-100 pl-8 text-left pb-20 relative">
-      {sortedEvents.map((e, i) => (
-        <div key={e.id || i} className="relative group">
-          {/* Bulina Timeline */}
-          <div className="absolute left-[-41px] top-6 w-4 h-4 rounded-full border-4 border-white bg-[#556B2F] shadow-sm group-hover:scale-125 transition-transform" />
+    <div className="relative border-l-2 border-slate-200 ml-4 md:ml-6 pl-6 md:pl-10 space-y-6 pb-10">
+      {treatments.map((tr) => {
+        const isFinalizat = tr.status === "Finalizată";
 
-          <div className="p-6 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-md transition-all">
-            {/* Header: Titlu și Dată */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-              <div>
-                <span className="text-[8px] font-black uppercase text-[#556B2F] bg-[#556B2F]/10 px-2 py-1 rounded-md tracking-widest mb-2 inline-block">
-                  {e.procedure_name.includes("Înregistrare")
-                    ? "Documentație"
-                    : "Intervenție"}
-                </span>
-                <h4 className="text-xl font-bold text-slate-800 tracking-tight">
-                  {e.procedure_name}
-                </h4>
-              </div>
+        // CONTRAST ÎMBUNĂTĂȚIT: Culori mai solide pentru fundal
+        const cardStyle = isFinalizat
+          ? darkMode
+            ? "bg-olive-base/10 border-l-olive-base border-y-slate-800 border-r-slate-800"
+            : "bg-olive-base/[0.07] border-l-olive-base border-y-slate-200 border-r-slate-200"
+          : darkMode
+            ? "bg-amber-500/10 border-l-amber-500 border-y-slate-800 border-r-slate-800"
+            : "bg-amber-500/[0.05] border-l-amber-500 border-y-slate-200 border-r-slate-200";
 
-              <div className="text-right">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center justify-end gap-1">
-                  <Calendar size={12} />{" "}
-                  {new Date(e.treatment_date).toLocaleDateString("ro-RO")}
-                </p>
-                <p className="text-[10px] font-bold text-slate-300 flex items-center justify-end gap-1 mt-1">
-                  <Clock size={12} /> {e.treatment_time || "--:--"}
-                </p>
-              </div>
-            </div>
+        const accentColor = isFinalizat ? "text-olive-base" : "text-amber-600";
 
-            {/* Corp: Observații și Detalii Tehnice */}
-            <div className="bg-slate-50/50 p-5 rounded-2xl mb-5 border border-slate-50">
-              <p className="text-sm text-slate-600 leading-relaxed italic">
-                {e.additional_info
-                  ? `"${e.additional_info}"`
-                  : "Fără observații clinice adăugate."}
-              </p>
+        return (
+          <div key={tr.id} className="relative">
+            {/* Bulina Timeline */}
+            <div
+              className={`absolute -left-[33px] md:-left-[47px] top-6 w-4 h-4 rounded-full border-2 ${
+                darkMode ? "border-[#0F172A]" : "border-white"
+              } ${isFinalizat ? "bg-olive-base" : "bg-amber-500 animate-pulse"}`}
+            />
 
-              {e.indicatii_pacient && (
-                <p className="text-[11px] text-[#556B2F] mt-3 font-medium">
-                  <strong>Indicații:</strong> {e.indicatii_pacient}
-                </p>
-              )}
+            {/* CARD CU BORDURĂ LATERALĂ ACCENTUATĂ */}
+            <div
+              className={`rounded-r-2xl rounded-l-md p-5 md:p-6 transition-all border-l-[6px] border shadow-sm ${cardStyle}`}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                  {isFinalizat ? (
+                    <CheckCircle2 size={14} className="text-olive-base" />
+                  ) : (
+                    <Clock size={14} className="text-amber-500" />
+                  )}
+                  <span
+                    className={`text-[10px] font-black uppercase tracking-widest ${accentColor}`}
+                  >
+                    {isFinalizat ? "Finalizat" : "În lucru"}
+                  </span>
+                </div>
 
-              <div className="flex flex-wrap gap-6 mt-4 pt-4 border-t border-slate-100/50">
-                {e.tooth_number && (
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-white rounded-lg border border-slate-100 text-[#556B2F]">
-                      <Hash size={14} />
-                    </div>
-                    <div>
-                      <p className="text-[8px] font-black text-slate-400 uppercase">
-                        Dinți
-                      </p>
-                      <p className="text-xs font-bold text-slate-700">
-                        {e.tooth_number}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {e.total_cost > 0 && (
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-white rounded-lg border border-slate-100 text-slate-400">
-                      RON
-                    </div>
-                    <div>
-                      <p className="text-[8px] font-black text-slate-400 uppercase">
-                        Financiar
-                      </p>
-                      <p className="text-xs font-bold text-slate-700">
-                        {e.amount_paid} / {e.total_cost} RON
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Footer: Snapshot și Doctor */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              {e.fisa_snapshot ? (
-                <button
-                  onClick={() => setSnapshot(e.fisa_snapshot)}
-                  className="flex items-center gap-2 text-[9px] font-black uppercase text-white bg-[#556B2F] px-5 py-3 rounded-xl hover:bg-[#455a26] transition-all shadow-lg shadow-[#556B2F]/20 w-fit"
+                <div
+                  className={`flex items-center gap-2 ${darkMode ? "text-slate-400" : "text-slate-500"}`}
                 >
-                  <FileText size={14} /> Vezi Starea Fișei (Snapshot)
-                </button>
-              ) : (
-                <div className="text-[9px] font-bold text-slate-300 uppercase italic">
-                  Niciun snapshot atașat
+                  <Calendar size={12} />
+                  <span className="font-bold text-[11px]">
+                    {tr.treatment_date}
+                  </span>
                 </div>
-              )}
+              </div>
 
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
-                  <User size={12} className="text-slate-400" />
-                </div>
-                <p className="text-[9px] font-bold text-slate-500 uppercase">
-                  {e.doctor_info?.full_name || "Doctor nesemnat"}
+              {/* Titlu - Contrast maxim */}
+              <h3
+                className={`text-lg md:text-xl font-bold mb-3 ${darkMode ? "text-white" : "text-slate-900"}`}
+              >
+                {tr.procedure_name}
+              </h3>
+
+              {/* Observații - Fundal mai opac pentru contrast */}
+              <div
+                className={`p-4 rounded-xl mb-4 border ${
+                  darkMode
+                    ? "bg-slate-900/60 border-slate-700/50"
+                    : "bg-white/80 border-slate-200 shadow-inner"
+                }`}
+              >
+                <p
+                  className={`text-sm italic font-medium leading-snug ${darkMode ? "text-slate-300" : "text-slate-800"}`}
+                >
+                  {tr.observations || "Fără observații clinice adăugate."}
                 </p>
+              </div>
+
+              {/* Detalii Tehnice & Footer */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-4 border-t border-slate-400/20 gap-4">
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <Hash size={14} className={accentColor} />
+                    <span
+                      className={`text-xs font-bold ${darkMode ? "text-slate-200" : "text-slate-700"}`}
+                    >
+                      #{tr.teeth_numbers || "—"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Banknote size={14} className={accentColor} />
+                    <span
+                      className={`text-xs font-bold ${darkMode ? "text-slate-200" : "text-slate-700"}`}
+                    >
+                      {tr.price || "0"} RON
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 w-full sm:w-auto justify-between">
+                  <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-olive-base hover:text-olive-dark transition-colors">
+                    <FileText size={14} /> Snapshot
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-[9px] font-bold uppercase ${darkMode ? "text-slate-500" : "text-slate-400"}`}
+                    >
+                      Dr.{" "}
+                      {tr.doctor_info?.full_name?.split(" ").pop() || "Andrada"}
+                    </span>
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center border ${
+                        darkMode
+                          ? "bg-slate-800 border-slate-700"
+                          : "bg-slate-100 border-slate-200"
+                      }`}
+                    >
+                      <User size={12} className="text-slate-500" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ))}
-
-      {/* MODAL SNAPSHOT (CUM ARĂTA FIȘA ATUNCI) */}
-      {snapshot && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md">
-          <div className="bg-white p-8 md:p-10 rounded-[2.5rem] max-w-2xl w-full max-h-[85vh] overflow-y-auto relative shadow-2xl scrollbar-thin">
-            <button
-              onClick={() => setSnapshot(null)}
-              className="absolute top-8 right-8 text-slate-300 hover:text-slate-500 transition-colors"
-            >
-              <X size={28} />
-            </button>
-
-            <div className="border-b-2 border-slate-50 pb-6 mb-8">
-              <h3 className="text-xl font-bold uppercase text-[#556B2F] tracking-tight">
-                Snapshot Fișă Medicală
-              </h3>
-              <p className="text-xs text-slate-400 mt-2">
-                Aceasta este starea fișei pacientului în momentul efectuării
-                acestei manopere.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <SnapshotField label="Motiv Vizită" value={snapshot.reason} />
-              <SnapshotField
-                label="Alergii"
-                value={snapshot.allergies}
-                highlight={
-                  snapshot.allergies !== "Neagă" && snapshot.allergies !== ""
-                }
-              />
-              <SnapshotField
-                label="Antecedente Personale (APF/APP)"
-                value={snapshot.antecedente_personale}
-              />
-              <SnapshotField
-                label="Medicație Fond"
-                value={snapshot.medicatie_fond}
-              />
-              <SnapshotField
-                label="Examen Clinic"
-                value={snapshot.examen_clinic}
-              />
-              <SnapshotField
-                label="Investigații"
-                value={snapshot.investigatii}
-              />
-              <SnapshotField
-                label="Observații Generale"
-                value={snapshot.observations}
-              />
-            </div>
-
-            <button
-              onClick={() => setSnapshot(null)}
-              className="w-full mt-10 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-800 transition-all"
-            >
-              Închide Vizualizarea
-            </button>
-          </div>
-        </div>
-      )}
-
-      <style jsx>{`
-        .scrollbar-thin::-webkit-scrollbar {
-          width: 5px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 10px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-track {
-          background: #f8fafc;
-        }
-      `}</style>
-    </div>
-  );
-}
-
-function SnapshotField({ label, value, highlight }) {
-  return (
-    <div className="text-left bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-      <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-2">
-        {label}
-      </p>
-      <p
-        className={`text-[13px] leading-relaxed whitespace-pre-wrap ${highlight ? "text-red-500 font-bold" : "text-slate-700"}`}
-      >
-        {value || "—"}
-      </p>
+        );
+      })}
     </div>
   );
 }

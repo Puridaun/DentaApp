@@ -11,7 +11,7 @@ const AnamnezaRow = ({
   type = "textarea",
 }) => (
   <div className="text-left border-b border-slate-50 pb-5 last:border-0 print:border-slate-200">
-    <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest block mb-2">
+    <label className="text-[9px] font-bold uppercase text-text-muted tracking-widest block mb-2">
       {label}
     </label>
     {isEditing ? (
@@ -20,13 +20,13 @@ const AnamnezaRow = ({
           type={type}
           value={value || ""}
           onChange={(e) => onChange(field, e.target.value)}
-          className="w-full p-3 rounded-xl border border-slate-100 text-sm outline-none focus:border-[#556B2F] bg-slate-50/50"
+          className="w-full p-3 rounded-xl border border-slate-100 text-sm outline-none focus:border-olive-base bg-slate-50/50"
         />
       ) : (
         <textarea
           value={value || ""}
           onChange={(e) => onChange(field, e.target.value)}
-          className="w-full p-4 rounded-xl border border-slate-100 text-sm outline-none focus:border-[#556B2F] bg-slate-50/50 transition-all min-h-[80px] resize-none"
+          className="w-full p-4 rounded-xl border border-slate-100 text-sm outline-none focus:border-olive-base bg-slate-50/50 transition-all min-h-[80px] resize-none"
         />
       )
     ) : (
@@ -66,10 +66,10 @@ export default function FisaClinicaModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-2 md:p-4 bg-slate-900/60 backdrop-blur-sm print:bg-white print:p-0">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-2 md:p-4 bg-text-main/60 backdrop-blur-sm print:bg-white print:p-0">
       <div
         className={`w-full max-w-3xl rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-2xl relative overflow-y-auto max-h-[95vh] 
-        ${darkMode ? "bg-slate-900 text-white" : "bg-white text-slate-800"} scrollbar-thin`}
+        ${darkMode ? "bg-text-main text-white" : "bg-white text-slate-800"} scrollbar-thin`}
       >
         <button
           onClick={onClose}
@@ -82,7 +82,7 @@ export default function FisaClinicaModal({
           <h2 className="text-lg md:text-xl font-medium text-slate-800 uppercase tracking-tight">
             Fișă de observație clinică
           </h2>
-          <p className="text-md font-bold text-[#556B2F] mt-1">
+          <p className="text-md font-bold text-olive-base mt-1">
             {patient.full_name}
           </p>
         </div>
@@ -90,7 +90,7 @@ export default function FisaClinicaModal({
         <div className="space-y-6">
           {/* SECȚIUNE NOUĂ: DATE IDENTIFICARE */}
           <div className="bg-slate-50/50 p-4 rounded-2xl space-y-4 border border-slate-100">
-            <p className="text-[10px] font-black text-[#556B2F] uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+            <p className="text-[10px] font-black text-olive-base uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
               <User size={12} /> Date Identificare
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -197,7 +197,7 @@ export default function FisaClinicaModal({
           {isEditing ? (
             <button
               onClick={onSaveInternal}
-              className="flex-1 bg-[#556B2F] text-white py-3.5 rounded-xl font-bold uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg"
+              className="flex-1 bg-olive-base text-white py-3.5 rounded-xl font-bold uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg"
             >
               <Check size={16} /> Salvează modificările
             </button>

@@ -20,7 +20,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-brand-cream flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-slate-100 text-slate-900">
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-slate-100 text-text-main">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-brand-olive rounded-2xl flex items-center justify-center text-white text-3xl font-black mx-auto mb-4 shadow-lg shadow-brand-olive/20">
             S
@@ -33,12 +33,12 @@ export default function Login() {
 
         <form onSubmit={handleLogin} className="space-y-4 text-left">
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1 ml-1">
               Email
             </label>
             <div className="relative">
               <Mail
-                className="absolute left-3 top-3.5 text-slate-400"
+                className="absolute left-3 top-3.5 text-text-muted"
                 size={18}
               />
               <input
@@ -53,12 +53,12 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1 ml-1">
               Parolă
             </label>
             <div className="relative">
               <Lock
-                className="absolute left-3 top-3.5 text-slate-400"
+                className="absolute left-3 top-3.5 text-text-muted"
                 size={18}
               />
               <input
