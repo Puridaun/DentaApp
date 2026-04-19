@@ -8,8 +8,6 @@ import {
   Filter,
   Loader2,
 } from "lucide-react";
-
-// Importăm piesele noi
 import StatCard from "../components/Dashboard/StatCard";
 import DoctorDistribution from "../components/Dashboard/DoctorDistribution";
 
@@ -84,32 +82,37 @@ export default function DashboardPage({ darkMode, isAdmin }) {
 
   if (loading)
     return (
-      <div className="p-20 flex justify-center">
-        <Loader2 className="animate-spin text-olive-base" size={40} />
+      <div className="p-40 flex justify-center">
+        <Loader2
+          className="animate-spin text-olive-base opacity-30"
+          size={40}
+        />
       </div>
     );
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto text-left animate-in fade-in duration-700">
+    <div
+      className={`p-4 md:p-10 max-w-7xl mx-auto text-left animate-in fade-in duration-1000 ${darkMode ? "text-white" : "text-slate-900"}`}
+    >
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 px-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
         <div>
-          <h1
-            className={`text-3xl font-bold tracking-tight ${darkMode ? "text-white" : "text-text-main"}`}
-          >
+          <h1 className="text-3xl font-medium tracking-tight">
             Salut, Serafim! 👋
           </h1>
-          <p className="text-text-muted text-sm mt-1">
-            Iată ce se întâmplă astăzi în clinica ta.
+          <p className="text-slate-400 text-[13px] mt-1 font-normal">
+            Iată situația clinicii tale pentru astăzi.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-          <Filter size={16} className="ml-2 text-text-muted" />
+        <div
+          className={`flex items-center gap-3 px-4 py-2 rounded-2xl border transition-all ${darkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}
+        >
+          <Filter size={14} className="text-slate-400" />
           <select
             value={selectedDoctor}
             onChange={(e) => setSelectedDoctor(e.target.value)}
-            className="text-xs font-bold uppercase tracking-widest outline-none bg-transparent pr-4 cursor-pointer text-slate-600"
+            className="text-[11px] font-medium uppercase tracking-widest outline-none bg-transparent cursor-pointer text-slate-500"
           >
             <option value="all">Toți Doctorii</option>
             {doctors.map((d) => (
@@ -122,12 +125,12 @@ export default function DashboardPage({ darkMode, isAdmin }) {
       </div>
 
       {/* CARDURI STATISTICI */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
         <StatCard
           icon={<Users className="text-blue-500" />}
           label="Total Pacienți"
           value={stats.totalPatients}
-          subLabel="Înscriși în sistem"
+          subLabel="Bază de date activă"
           darkMode={darkMode}
         />
         <StatCard
@@ -139,35 +142,34 @@ export default function DashboardPage({ darkMode, isAdmin }) {
         />
         {isAdmin && (
           <StatCard
-            icon={<Wallet className="text-olive-base" />}
+            icon={<Wallet className="text-white" />}
             label="Total Încasări"
             value={`${stats.totalRevenue.toLocaleString()} RON`}
-            subLabel="Bani adunați (Sistem)"
+            subLabel="Calculat din tratamente"
             darkMode={darkMode}
             highlight
           />
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* DISTRIBUTIE DOCTORI */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <DoctorDistribution stats={stats} darkMode={darkMode} />
 
-        {/* CARD OBIECTIV (rămâne aici fiindcă e unic) */}
-        <div className="p-8 rounded-[2.5rem] border-2 bg-olive-base text-white shadow-xl shadow-olive-base/20 relative overflow-hidden">
-          <div className="relative z-10">
-            <h3 className="text-xl font-bold mb-2">Obiectiv Clinică</h3>
-            <p className="text-white/70 text-sm mb-6 font-light">
-              Eficiența crește atunci când agenda este plină. Verifică pacienții
-              care nu au mai venit de 6 luni!
+        {/* CARD OBIECTIV */}
+        <div className="p-10 rounded-[3rem] border bg-slate-900 text-white shadow-2xl relative overflow-hidden flex flex-col justify-center">
+          <div className="relative z-10 max-w-[80%]">
+            <h3 className="text-2xl font-medium mb-4">Obiectiv Clinică</h3>
+            <p className="text-slate-400 text-[13px] mb-8 font-normal leading-relaxed">
+              Verifică pacienții care nu au mai vizitat clinica de 6 luni. O
+              listă plină înseamnă o clinică performantă.
             </p>
-            <button className="bg-white text-olive-base px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-all">
-              Vezi Raport Reactivare
+            <button className="bg-olive-base text-white px-8 py-4 rounded-2xl text-[11px] font-medium uppercase tracking-[0.2em] shadow-lg hover:scale-[1.03] transition-all">
+              Raport Reactivare
             </button>
           </div>
           <TrendingUp
-            size={150}
-            className="absolute bottom-[-20px] right-[-20px] text-white/10 rotate-12"
+            size={180}
+            className="absolute bottom-[-30px] right-[-30px] text-olive-base/10 rotate-12"
           />
         </div>
       </div>

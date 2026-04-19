@@ -1,13 +1,6 @@
-import {
-  Calendar as CalIcon,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { Calendar as CalIcon, Plus } from "lucide-react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
-
-// Importăm piesele noastre noi
 import AgendaGrid from "../components/Agenda/AgendaGrid";
 import AgendaModal from "../components/Agenda/AgendaModal";
 
@@ -19,57 +12,72 @@ export default function AgendaPage({ darkMode }) {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const dateInputRef = useRef(null);
 
   const [form, setForm] = useState({
     time: "08:00",
+    endTime: "21:00",
     patientId: "",
     procedure: "",
     doctorId: "",
     notes: "",
   });
 
-  useEffect(() => {
-    fetchData();
-  }, [currentDate]);
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     const dateStr = currentDate.toISOString().split("T")[0];
-
-    const [apptsRes, patientsRes, doctorsRes] = await Promise.all([
-      supabase
-        .from("appointments")
-        .select(
-          `*, patient:patients(full_name), doctor:profiles!doctor_id(full_name, color_preference)`,
-        )
-        .eq("appointment_date", dateStr),
-      supabase.from("patients").select("id, full_name").order("full_name"),
-      supabase.from("profiles").select("id, full_name, color_preference"),
-    ]);
-
-    if (apptsRes.data) setAppointments(apptsRes.data);
-    if (patientsRes.data) setPatients(patientsRes.data);
-    if (doctorsRes.data) setDoctors(doctorsRes.data);
+    try {
+      const [apptsRes, patientsRes, doctorsRes] = await Promise.all([
+        supabase
+          .from("appointments")
+          .select(
+            `*, patient:patients(full_name), doctor:profiles!doctor_id(full_name, color_preference)`,
+          )
+          .eq("appointment_date", dateStr),
+        supabase.from("patients").select("id, full_name").order("full_name"),
+        supabase.from("profiles").select("id, full_name, color_preference"),
+      ]);
+      if (apptsRes.data) setAppointments(apptsRes.data);
+      if (patientsRes.data) setPatients(patientsRes.data);
+      if (doctorsRes.data) setDoctors(doctorsRes.data);
+    } catch (err) {
+      console.error(err);
+    }
     setLoading(false);
-  }
+  }, [currentDate]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSave = async () => {
-    const dateStr = currentDate.toISOString().split("T")[0];
-    const [h, m] = form.time.split(":");
-    let endM = parseInt(m) + 30;
-    let endH = parseInt(h);
-    if (endM === 60) {
-      endM = 0;
-      endH++;
-    }
-    const endTime = `${endH.toString().padStart(2, "0")}:${endM.toString().padStart(2, "0")}:00`;
+    const toMin = (t) => {
+      const parts = String(t).split(":");
+      return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    };
+    const s = toMin(form.time);
+    const e = toMin(form.endTime);
+
+    const conflict = appointments.find((a) => {
+      if (editingId && String(a.id) === String(editingId)) return false;
+      if (String(a.doctor_id) !== String(form.doctorId)) return false;
+      const as = toMin(a.start_time);
+      const ae = toMin(a.end_time);
+      return s < ae && as < e;
+    });
+
+    if (
+      conflict &&
+      !window.confirm(`Medicul are deja o programare atunci. Continui?`)
+    )
+      return;
 
     const payload = {
       patient_id: form.patientId,
       doctor_id: form.doctorId,
-      appointment_date: dateStr,
-      start_time: form.time + ":00",
-      end_time: endTime,
+      appointment_date: currentDate.toISOString().split("T")[0],
+      start_time: form.time.substring(0, 5) + ":00",
+      end_time: form.endTime.substring(0, 5) + ":00",
       procedure_name: form.procedure,
       notes: form.notes,
     };
@@ -77,16 +85,7 @@ export default function AgendaPage({ darkMode }) {
     const { error } = editingId
       ? await supabase.from("appointments").update(payload).eq("id", editingId)
       : await supabase.from("appointments").insert([payload]);
-
     if (!error) {
-      setShowModal(false);
-      fetchData();
-    }
-  };
-
-  const deleteAppt = async () => {
-    if (window.confirm("Anulezi programarea?")) {
-      await supabase.from("appointments").delete().eq("id", editingId);
       setShowModal(false);
       fetchData();
     }
@@ -96,6 +95,7 @@ export default function AgendaPage({ darkMode }) {
     setEditingId(null);
     setForm({
       time: ora || "08:00",
+      endTime: "21:00",
       patientId: "",
       procedure: "",
       doctorId: "",
@@ -108,6 +108,7 @@ export default function AgendaPage({ darkMode }) {
     setEditingId(appt.id);
     setForm({
       time: appt.start_time.substring(0, 5),
+      endTime: appt.end_time.substring(0, 5),
       patientId: appt.patient_id,
       procedure: appt.procedure_name,
       doctorId: appt.doctor_id,
@@ -117,74 +118,52 @@ export default function AgendaPage({ darkMode }) {
   };
 
   return (
-    <div className="p-2 md:p-8 max-w-6xl mx-auto text-left animate-in fade-in duration-500">
-      {/* HEADER - Îl lăsăm aici pentru că e scurt */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 px-2">
-        <div className="flex items-center gap-4">
-          <div className="bg-olive-base p-3 rounded-2xl text-white shadow-lg">
-            <CalIcon size={24} />
+    <div
+      className={`w-full overflow-x-hidden p-3 md:p-8 max-w-7xl mx-auto text-left ${darkMode ? "text-white" : "text-slate-900"}`}
+    >
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div className="flex items-center gap-3 md:gap-5">
+          <div
+            onClick={() => dateInputRef.current.showPicker()}
+            className="bg-[#556B2F] p-3 md:p-4 rounded-[1.25rem] text-white shadow-xl cursor-pointer transition-all relative"
+          >
+            <CalIcon size={24} className="md:w-7 md:h-7" />
+            <input
+              ref={dateInputRef}
+              type="date"
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              onChange={(e) => setCurrentDate(new Date(e.target.value))}
+            />
           </div>
           <div>
-            <h1 className="text-xl md:text-2xl font-bold">
+            <h1 className="text-lg md:text-3xl font-bold uppercase tracking-tight leading-tight">
               {currentDate.toLocaleDateString("ro-RO", {
-                weekday: "long",
+                weekday: "short",
                 day: "numeric",
-                month: "long",
+                month: "short",
               })}
             </h1>
-            <p className="text-[10px] uppercase font-black text-text-muted">
-              Management Clinică
+            <p className="text-[10px] md:text-[13px] font-bold uppercase tracking-[0.2em] text-[#556B2F]">
+              Dental Clinic System
             </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          <div className="flex bg-white border-2 border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-            <button
-              onClick={() => {
-                const d = new Date(currentDate);
-                d.setDate(d.getDate() - 1);
-                setCurrentDate(d);
-              }}
-              className="p-3 hover:bg-slate-50 border-r transition-colors"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={() => setCurrentDate(new Date())}
-              className="px-5 py-2 text-[10px] font-black uppercase text-olive-base"
-            >
-              Azi
-            </button>
-            <button
-              onClick={() => {
-                const d = new Date(currentDate);
-                d.setDate(d.getDate() + 1);
-                setCurrentDate(d);
-              }}
-              className="p-3 hover:bg-slate-50 transition-colors"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-          <button
-            onClick={() => openAddModal()}
-            className="bg-olive-base text-white px-6 py-3 rounded-2xl text-[10px] font-bold uppercase shadow-lg flex items-center gap-2"
-          >
-            <Plus size={16} /> Programare
-          </button>
-        </div>
+        <button
+          onClick={() => openAddModal()}
+          className="w-full sm:w-auto bg-[#556B2F] text-white px-6 py-4 rounded-2xl text-[11px] md:text-[12px] font-bold uppercase tracking-widest shadow-lg flex items-center justify-center gap-2"
+        >
+          <Plus size={16} /> Programare
+        </button>
       </div>
 
-      {/* PIESA 1: Grid-ul de programări */}
       <AgendaGrid
         loading={loading}
         appointments={appointments}
         onAddClick={openAddModal}
         onEditClick={openEditModal}
+        darkMode={darkMode}
       />
 
-      {/* PIESA 2: Modalul de adăugare/editare */}
       <AgendaModal
         show={showModal}
         onClose={() => setShowModal(false)}
@@ -193,8 +172,20 @@ export default function AgendaPage({ darkMode }) {
         doctors={doctors}
         patients={patients}
         onSave={handleSave}
-        onDelete={deleteAppt}
+        onDelete={() => {
+          if (window.confirm("Ștergi?")) {
+            supabase
+              .from("appointments")
+              .delete()
+              .eq("id", editingId)
+              .then(() => {
+                setShowModal(false);
+                fetchData();
+              });
+          }
+        }}
         editingId={editingId}
+        darkMode={darkMode}
       />
     </div>
   );

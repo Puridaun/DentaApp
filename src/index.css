@@ -14,108 +14,89 @@
   --color-status-success: #059669;
 }
 
-/* RESET GLOBAL PENTRU TITLURI */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  color: inherit;
-  margin: 0;
-}
-
 :root {
+  --color-app-bg: #FBFBFD;
+  /* Fundalul general al paginii */
+  --header-mint: #f2f6f0;
+  /* Verdele mentă pentru navbar */
+  --olive-base: #556B2F;
+  --color-text-main: #1a1c18;
+  --color-text-muted: #64748b;
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
   background-color: var(--color-app-bg);
   color: var(--color-text-main);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  transition: background-color 0.3s ease;
 }
 
-/* LOGICA DARK MODE */
+/* --- IERARHIE TIPOGRAFICĂ LINIARĂ --- */
+h1 {
+  @apply text-2xl md:text-3xl font-bold tracking-tight;
+}
+
+h2 {
+  @apply text-xl font-semibold tracking-tight;
+}
+
+h3 {
+  @apply text-lg font-semibold;
+}
+
+/* Font standard pentru toate butoanele din aplicație */
+button,
+.btn-premium {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.15em !important;
+}
+
+/* --- DARK MODE LOGIC --- */
 .dark {
   --color-app-bg: #0F172A;
   --color-app-surface: #1E293B;
   --color-text-main: #FFFFFF;
   --color-text-sub: #94A3B8;
-
   background-color: var(--color-app-bg) !important;
   color: #FFFFFF !important;
 }
 
 .dark h1,
 .dark h2,
-.dark h3,
-.dark h4 {
+.dark h3 {
   color: #FFFFFF !important;
 }
 
-.dark input,
-.dark select {
-  color: #FFFFFF !important;
-  background-color: transparent;
+/* --- RESPONSIVE UTILITIES --- */
+.app-container {
+  @apply max-w-[1440px] mx-auto w-full px-4 md:px-6 lg:px-8;
 }
 
-.dark input::placeholder {
-  color: #475569 !important;
-}
-
-/* --- BASE STYLES --- */
-body {
-  margin: 0;
-  min-height: 100vh;
-}
-
-#root {
-  width: 100%;
-}
-
-* {
-  transition-property: background-color, border-color, color, transform, opacity;
-  transition-duration: 200ms;
-}
-
-/* --- REPARARE SCROLLBAR (STIL APPLE/MODERN) --- */
-
-/* Pentru Chrome, Edge, Safari */
+/* --- SCROLLBAR (APPLE STYLE) --- */
 ::-webkit-scrollbar {
   width: 6px;
-  /* Foarte subțire */
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
   background: transparent;
-  /* Fără bandă gri pe fundal */
 }
 
-/* Thumb - Partea care se mișcă (Light Mode) */
 ::-webkit-scrollbar-thumb {
   background-color: #E2E8F0;
   border-radius: 20px;
 }
 
-/* Thumb - Partea care se mișcă (Dark Mode) */
 .dark ::-webkit-scrollbar-thumb {
   background-color: #334155;
-  /* Bleumarin discret */
 }
 
-/* Hover effect */
-::-webkit-scrollbar-thumb:hover {
-  background-color: #cbd5e1;
+/* Base Reset */
+body {
+  @apply m-0 min-h-screen overflow-x-hidden;
+  background-color: var(--color-app-bg);
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background-color: #475569;
-}
-
-/* Pentru Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #E2E8F0 transparent;
-}
-
-.dark * {
-  scrollbar-color: #334155 transparent;
+#root {
+  width: 100%;
 }
