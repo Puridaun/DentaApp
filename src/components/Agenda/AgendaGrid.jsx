@@ -1,5 +1,5 @@
 import React from "react";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { ORE_LUCRU, COLOR_MAP } from "./AgendaUtils";
 
 export default function AgendaGrid({
@@ -10,6 +10,15 @@ export default function AgendaGrid({
   darkMode,
 }) {
   const ROW_HEIGHT = 120;
+
+  // Funcție pentru a verifica dacă programarea a trecut
+  const isPast = (dateStr, timeStr) => {
+    const now = new Date();
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    const apptDate = new Date(dateStr);
+    apptDate.setHours(hours, minutes, 0, 0);
+    return apptDate < now;
+  };
 
   const calculateHeight = (start, end) => {
     if (!start || !end) return ROW_HEIGHT;
@@ -64,6 +73,9 @@ export default function AgendaGrid({
                     const style =
                       COLOR_MAP[appt.doctor?.color_preference] ||
                       COLOR_MAP["#E6E6FA"];
+
+                    const past = isPast(appt.appointment_date, appt.start_time);
+
                     const height = calculateHeight(
                       appt.start_time,
                       appt.end_time,
@@ -81,40 +93,51 @@ export default function AgendaGrid({
                           left: `calc(${leftOffset}% + 6px)`,
                           zIndex: 20 + index,
                         }}
-                        /* Am eliminat flex-col items-center justify-between pentru a forța totul SUS */
-                        className={`absolute top-[5px] p-5 rounded-[2rem] border-t-[6px] cursor-pointer shadow-md ${style.bg} ${style.border} overflow-hidden transition-all hover:shadow-lg`}
+                        className={`absolute top-[5px] p-5 rounded-[2rem] border-t-[6px] cursor-pointer shadow-md overflow-hidden transition-all hover:shadow-lg 
+                          ${
+                            past
+                              ? "bg-slate-100 border-slate-300 opacity-50 grayscale"
+                              : `${style.bg} ${style.border}`
+                          }`}
                       >
-                        {/* HEADER: Tratament și Ora (Aliniate sus) */}
+                        {/* HEADER: Tratament și Ora */}
                         <div className="flex justify-between items-center mb-3">
                           <span
-                            className={`text-[10px] uppercase tracking-[0.2em] font-medium ${style.text}`}
+                            className={`text-[10px] uppercase tracking-[0.2em] font-medium ${past ? "text-slate-400" : style.text}`}
                           >
-                            {appt.procedure_name || "TRATAMENT"}
+                            {appt.procedure_name || "TRATAMENT"} {past && "✓"}
                           </span>
                           <span className="text-[10px] font-medium text-slate-500 bg-white/50 px-2 py-0.5 rounded-full">
-                            {appt.start_time.substring(0, 5)} -{" "}
-                            {appt.end_time?.substring(0, 5)}
+                            {appt.start_time.substring(0, 5)}
                           </span>
                         </div>
 
-                        {/* CONTINUT: Nume și Detalii (Grupate imediat sub header) */}
+                        {/* CONTINUT: Nume și Detalii */}
                         <div className="flex flex-col text-left">
-                          <h4 className="text-[15px] font-medium text-slate-800 leading-tight uppercase tracking-wide mb-1">
+                          <h4
+                            className={`text-[15px] font-medium leading-tight uppercase tracking-wide mb-1 ${past ? "text-slate-400 line-through" : "text-slate-800"}`}
+                          >
                             {appt.patient?.full_name}
                           </h4>
                           {appt.notes && (
-                            <p className="text-[12px] text-slate-600 font-normal italic leading-snug">
+                            <p
+                              className={`text-[12px] font-normal italic leading-snug ${past ? "text-slate-400" : "text-slate-600"}`}
+                            >
                               {appt.notes}
                             </p>
                           )}
                         </div>
 
-                        {/* DOCTOR: Mutat imediat sub restul textului, nu la fundul paginii */}
-                        <div className="mt-4 pt-3 border-t border-black/[0.05] flex items-center gap-2">
+                        {/* DOCTOR */}
+                        <div
+                          className={`mt-4 pt-3 border-t border-black/[0.05] flex items-center gap-2 ${past ? "opacity-50" : ""}`}
+                        >
                           <div
-                            className={`w-2 h-2 rounded-full ${style.text} bg-current`}
+                            className={`w-2 h-2 rounded-full ${past ? "bg-slate-400" : `${style.text} bg-current`}`}
                           />
-                          <p className="text-[11px] font-medium text-slate-600 uppercase tracking-widest">
+                          <p
+                            className={`text-[11px] font-medium uppercase tracking-widest ${past ? "text-slate-400" : "text-slate-600"}`}
+                          >
                             Dr. {appt.doctor?.full_name}
                           </p>
                         </div>

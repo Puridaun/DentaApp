@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 
-// Importuri corectate și păstrate exact cum le-ai avut
 import PatientHeader from "../components/PatientDetails/PatientHeader";
 import { TabBtn } from "../components/PatientDetails/PatientSubComponents";
 import FisaClinicaModal from "../components/PatientDetails/FisaClinicaModal";
@@ -46,7 +45,13 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
       )
       .eq("id", patientId)
       .single();
-    if (data) setPatient(data);
+
+    if (data) {
+      const sortedTreatments = (data.treatments || []).sort(
+        (a, b) => new Date(b.treatment_date) - new Date(a.treatment_date),
+      );
+      setPatient({ ...data, treatments: sortedTreatments });
+    }
     setLoading(false);
   }
 
@@ -55,7 +60,6 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
       setIsEditingInfo(true);
       return;
     }
-
     const { error } = await supabase
       .from("patients")
       .update({
@@ -76,77 +80,74 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
     if (!error) {
       setIsEditingInfo(false);
       fetchPatientData();
-    } else {
-      console.error("Eroare la salvare:", error);
-      alert("Eroare la salvarea datelor!");
     }
+  };
+
+  const handleContinueTreatment = (treatment) => {
+    setContinueFrom(treatment);
+    setActiveSubTab("manopere");
   };
 
   if (loading)
     return (
-      <div className="p-20 text-center flex flex-col items-center justify-center">
-        <Loader2 className="animate-spin text-[#556B2F]" size={40} />
-        <p className="mt-4 text-slate-400 font-medium">
-          Se încarcă profilul pacientului...
-        </p>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <Loader2 className="animate-spin text-[#556B2F] opacity-30" size={32} />
       </div>
     );
 
   return (
-    <div className="p-2 md:p-8 max-w-7xl mx-auto text-left animate-in fade-in duration-500">
+    <div
+      className={`p-3 md:p-10 max-w-7xl mx-auto text-left animate-in fade-in duration-700 ${darkMode ? "text-white" : "text-slate-900"}`}
+    >
       <PatientHeader
         patient={patient}
         onBack={onBack}
-        isEditing={isEditingInfo}
-        setIsEditing={setIsEditingInfo}
-        handleUpdate={handleUpdate}
         setIsFisaOpen={setIsFisaOpen}
         darkMode={darkMode}
-        setPatient={setPatient}
       />
 
-      <div className="flex gap-6 border-b border-slate-200 mb-8 px-2 overflow-x-auto no-scrollbar">
+      {/* Navigare - Modificat: Doar TRATAMENT */}
+      <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-800 mb-8 overflow-x-auto no-scrollbar">
         <TabBtn
           active={activeSubTab === "istoric"}
-          label="Istoric Tratament"
+          label="Cronologie"
           onClick={() => setActiveSubTab("istoric")}
         />
         <button
-          className={`pb-4 px-2 text-sm md:text-base font-bold uppercase tracking-widest transition-all ${
+          className={`pb-4 px-3 text-[11px] md:text-[13px] font-medium uppercase tracking-[0.15em] transition-all flex items-center gap-2 whitespace-nowrap ${
             activeSubTab === "manopere"
               ? "text-[#556B2F] border-b-2 border-[#556B2F]"
-              : "text-slate-400 hover:text-slate-600"
+              : "text-slate-400"
           }`}
           onClick={() => {
             setContinueFrom(null);
             setActiveSubTab("manopere");
           }}
         >
-          + Manoperă Nouă
+          <Plus size={14} /> {continueFrom ? "Finalizare Vizită" : "Tratament"}
         </button>
       </div>
 
-      <div className="px-2">
-        {/* REPARAȚIE: Trimitem un array gol [] dacă treatments nu există încă */}
+      <div className="min-h-[400px]">
         {activeSubTab === "istoric" && (
           <HistorySection
             treatments={patient?.treatments || []}
-            patient={patient}
-            onContinue={(t) => {
-              setContinueFrom(t);
-              setActiveSubTab("manopere");
-            }}
             darkMode={darkMode}
+            onContinue={handleContinueTreatment}
           />
         )}
 
         {activeSubTab === "manopere" && (
           <TreatmentSection
             patientId={patient.id}
-            onUpdate={fetchPatientData}
+            onUpdate={() => {
+              fetchPatientData();
+              setContinueFrom(null);
+              setActiveSubTab("istoric");
+            }}
             continueFrom={continueFrom}
-            currentDoctorName={currentDoctorName}
             darkMode={darkMode}
+            setIsFisaOpen={setIsFisaOpen}
           />
         )}
       </div>

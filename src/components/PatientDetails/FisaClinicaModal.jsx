@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { X, Edit3, Printer, Check, User } from "lucide-react";
+import {
+  X,
+  Edit3,
+  Printer,
+  Check,
+  User,
+  Activity,
+  FileText,
+} from "lucide-react";
 
 const AnamnezaRow = ({
   label,
@@ -9,29 +17,27 @@ const AnamnezaRow = ({
   isEditing,
   onChange,
   type = "textarea",
+  darkMode,
 }) => (
-  <div className="text-left border-b border-slate-50 pb-5 last:border-0 print:border-slate-200">
-    <label className="text-[9px] font-bold uppercase text-text-muted tracking-widest block mb-2">
+  <div
+    className={`text-left border-b pb-5 last:border-0 ${darkMode ? "border-slate-800" : "border-slate-50"}`}
+  >
+    <label className="text-[9px] font-medium uppercase text-slate-400 tracking-[0.2em] block mb-2">
       {label}
     </label>
     {isEditing ? (
-      type === "text" || type === "date" ? (
-        <input
-          type={type}
-          value={value || ""}
-          onChange={(e) => onChange(field, e.target.value)}
-          className="w-full p-3 rounded-xl border border-slate-100 text-sm outline-none focus:border-olive-base bg-slate-50/50"
-        />
-      ) : (
-        <textarea
-          value={value || ""}
-          onChange={(e) => onChange(field, e.target.value)}
-          className="w-full p-4 rounded-xl border border-slate-100 text-sm outline-none focus:border-olive-base bg-slate-50/50 transition-all min-h-[80px] resize-none"
-        />
-      )
+      <textarea
+        value={value || ""}
+        onChange={(e) => onChange(field, e.target.value)}
+        className={`w-full p-4 rounded-2xl border outline-none text-[13px] transition-all min-h-[80px] resize-none ${
+          darkMode
+            ? "bg-slate-800 border-slate-700 focus:border-[#556B2F] text-white"
+            : "bg-slate-50 border-slate-100 focus:border-[#556B2F] text-slate-700"
+        }`}
+      />
     ) : (
       <p
-        className={`text-[13px] leading-relaxed whitespace-pre-wrap ${highlight ? "text-red-500 font-bold" : "text-slate-600"}`}
+        className={`text-[13px] leading-relaxed whitespace-pre-wrap font-normal ${highlight ? "text-red-500 font-medium" : darkMode ? "text-slate-300" : "text-slate-600"}`}
       >
         {value || "—"}
       </p>
@@ -66,167 +72,158 @@ export default function FisaClinicaModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-2 md:p-4 bg-text-main/60 backdrop-blur-sm print:bg-white print:p-0">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm print:bg-white print:p-0">
       <div
-        className={`w-full max-w-3xl rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-2xl relative overflow-y-auto max-h-[95vh] 
-        ${darkMode ? "bg-text-main text-white" : "bg-white text-slate-800"} scrollbar-thin`}
+        className={`w-full max-w-3xl rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-12 shadow-2xl border relative overflow-y-auto max-h-[92vh] scrollbar-hide ${
+          darkMode
+            ? "bg-slate-900 border-slate-800 text-white"
+            : "bg-white border-slate-50 text-slate-800"
+        }`}
       >
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 text-slate-300 hover:text-slate-500 print:hidden transition-colors"
+          className="absolute top-6 right-6 md:top-10 md:right-10 text-slate-300 hover:text-slate-500 transition-colors"
         >
           <X size={24} />
         </button>
 
-        <div className="border-b border-slate-100 pb-5 mb-6 text-left">
-          <h2 className="text-lg md:text-xl font-medium text-slate-800 uppercase tracking-tight">
-            Fișă de observație clinică
+        <div className="border-b border-slate-100 dark:border-slate-800 pb-6 mb-8 text-left">
+          <h2 className="text-lg md:text-xl font-light uppercase tracking-[0.2em] text-slate-400">
+            Fișă clinică
           </h2>
-          <p className="text-md font-bold text-olive-base mt-1">
+          <p className="text-md md:text-lg font-medium text-[#556B2F] mt-1 uppercase tracking-tight">
             {patient.full_name}
           </p>
         </div>
 
-        <div className="space-y-6">
-          {/* SECȚIUNE NOUĂ: DATE IDENTIFICARE */}
-          <div className="bg-slate-50/50 p-4 rounded-2xl space-y-4 border border-slate-100">
-            <p className="text-[10px] font-black text-olive-base uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-              <User size={12} /> Date Identificare
+        <div className="space-y-10">
+          {/* 1. MOTIVUL VIZITEI & ALERGII */}
+          <section className="space-y-6">
+            <AnamnezaRow
+              label="Motiv Vizită"
+              value={isEditing ? localData.reason : patient.reason}
+              field="reason"
+              isEditing={isEditing}
+              onChange={handleLocalChange}
+              darkMode={darkMode}
+            />
+            <AnamnezaRow
+              label="Alergii"
+              value={isEditing ? localData.allergies : patient.allergies}
+              highlight={
+                patient.allergies &&
+                patient.allergies.toLowerCase() !== "neagă" &&
+                patient.allergies.toLowerCase() !== "neaga"
+              }
+              field="allergies"
+              isEditing={isEditing}
+              onChange={handleLocalChange}
+              darkMode={darkMode}
+            />
+          </section>
+
+          {/* 2. ANAMNEZA MEDICALĂ DETALIATĂ */}
+          <section className="space-y-6 pt-4">
+            <p className="text-[10px] font-medium text-[#556B2F] uppercase tracking-[0.2em] flex items-center gap-2 mb-6">
+              <Activity size={12} /> Anamneza Medicală
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <AnamnezaRow
-                label="Data Nașterii"
-                value={isEditing ? localData.birth_date : patient.birth_date}
-                field="birth_date"
+                label="Antecedente Personale (APP/APF)"
+                value={
+                  isEditing
+                    ? localData.antecedente_personale
+                    : patient.antecedente_personale
+                }
+                field="antecedente_personale"
                 isEditing={isEditing}
                 onChange={handleLocalChange}
-                type="date"
+                darkMode={darkMode}
               />
               <AnamnezaRow
-                label="Telefon"
-                value={isEditing ? localData.phone : patient.phone}
-                field="phone"
+                label="Antecedente Familiale (AHC)"
+                value={
+                  isEditing
+                    ? localData.antecedente_familiale
+                    : patient.antecedente_familiale
+                }
+                field="antecedente_familiale"
                 isEditing={isEditing}
                 onChange={handleLocalChange}
-                type="text"
-              />
-              <AnamnezaRow
-                label="Email"
-                value={isEditing ? localData.email : patient.email}
-                field="email"
-                isEditing={isEditing}
-                onChange={handleLocalChange}
-                type="text"
+                darkMode={darkMode}
               />
             </div>
-          </div>
+            <AnamnezaRow
+              label="Medicație de fond"
+              value={
+                isEditing ? localData.medicatie_fond : patient.medicatie_fond
+              }
+              field="medicatie_fond"
+              isEditing={isEditing}
+              onChange={handleLocalChange}
+              darkMode={darkMode}
+            />
+          </section>
 
-          {/* ANAMNEZA MEDICALĂ */}
-          <AnamnezaRow
-            label="Motiv Vizită"
-            value={isEditing ? localData.reason : patient.reason}
-            field="reason"
-            isEditing={isEditing}
-            onChange={handleLocalChange}
-          />
-          <AnamnezaRow
-            label="Alergii"
-            value={isEditing ? localData.allergies : patient.allergies}
-            highlight={
-              patient.allergies !== "Neagă" && patient.allergies !== ""
-            }
-            field="allergies"
-            isEditing={isEditing}
-            onChange={handleLocalChange}
-          />
-          <AnamnezaRow
-            label="Antecedente Personale (APF/APP)"
-            value={
-              isEditing
-                ? localData.antecedente_personale
-                : patient.antecedente_personale
-            }
-            field="antecedente_personale"
-            isEditing={isEditing}
-            onChange={handleLocalChange}
-          />
-          <AnamnezaRow
-            label="Antecedente Heredo-Colaterale (AHC)"
-            value={
-              isEditing
-                ? localData.antecedente_familiale
-                : patient.antecedente_familiale
-            }
-            field="antecedente_familiale"
-            isEditing={isEditing}
-            onChange={handleLocalChange}
-          />
-          <AnamnezaRow
-            label="Medicație de fond"
-            value={
-              isEditing ? localData.medicatie_fond : patient.medicatie_fond
-            }
-            field="medicatie_fond"
-            isEditing={isEditing}
-            onChange={handleLocalChange}
-          />
-          <AnamnezaRow
-            label="Examen Clinic"
-            value={isEditing ? localData.examen_clinic : patient.examen_clinic}
-            field="examen_clinic"
-            isEditing={isEditing}
-            onChange={handleLocalChange}
-          />
-          <AnamnezaRow
-            label="Investigații Paraclinice"
-            value={isEditing ? localData.investigatii : patient.investigatii}
-            field="investigatii"
-            isEditing={isEditing}
-            onChange={handleLocalChange}
-          />
-          <AnamnezaRow
-            label="Observații Generale"
-            value={isEditing ? localData.observations : patient.observations}
-            field="observations"
-            isEditing={isEditing}
-            onChange={handleLocalChange}
-          />
+          {/* 3. EXAMEN CLINIC & INVESTIGAȚII */}
+          <section className="space-y-6 pt-4">
+            <p className="text-[10px] font-medium text-[#556B2F] uppercase tracking-[0.2em] flex items-center gap-2 mb-6">
+              <FileText size={12} /> Examen Clinic & Investigații
+            </p>
+            <AnamnezaRow
+              label="Examen Clinic"
+              value={
+                isEditing ? localData.examen_clinic : patient.examen_clinic
+              }
+              field="examen_clinic"
+              isEditing={isEditing}
+              onChange={handleLocalChange}
+              darkMode={darkMode}
+            />
+            <AnamnezaRow
+              label="Investigații Paraclinice (Radiografii etc.)"
+              value={isEditing ? localData.investigatii : patient.investigatii}
+              field="investigatii"
+              isEditing={isEditing}
+              onChange={handleLocalChange}
+              darkMode={darkMode}
+            />
+            <AnamnezaRow
+              label="Observații Generale"
+              value={isEditing ? localData.observations : patient.observations}
+              field="observations"
+              isEditing={isEditing}
+              onChange={handleLocalChange}
+              darkMode={darkMode}
+            />
+          </section>
         </div>
 
-        <div className="mt-10 mb-2 pt-6 border-t border-slate-100 flex flex-col md:flex-row gap-3 print:hidden">
+        {/* BUTOANE ACȚIUNE */}
+        <div className="mt-12 flex flex-col gap-4 print:hidden">
           {isEditing ? (
             <button
               onClick={onSaveInternal}
-              className="flex-1 bg-olive-base text-white py-3.5 rounded-xl font-bold uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg"
+              className="w-full bg-[#556B2F] text-white py-5 rounded-3xl font-medium uppercase text-[11px] tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 active:scale-[0.98] transition-all"
             >
-              <Check size={16} /> Salvează modificările
+              <Check size={18} /> Salvează Modificările
             </button>
           ) : (
             <button
               onClick={() => handleUpdate(true)}
-              className="flex-1 bg-slate-800 text-white py-3.5 rounded-xl font-bold uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg"
+              className="w-full bg-slate-900 text-white py-5 rounded-3xl font-medium uppercase text-[11px] tracking-[0.2em] flex items-center justify-center gap-3 active:scale-[0.98] transition-all"
             >
-              <Edit3 size={16} /> Editează Fișa
+              <Edit3 size={18} /> Editează Fișa
             </button>
           )}
           <button
             onClick={() => window.print()}
-            className="px-6 py-3.5 bg-white border border-slate-200 text-slate-500 rounded-xl font-bold uppercase text-[10px] flex items-center justify-center gap-2"
+            className="w-full py-5 border border-slate-100 dark:border-slate-800 text-slate-400 rounded-3xl font-medium uppercase text-[11px] tracking-[0.2em] hover:bg-slate-50 transition-all"
           >
-            Print
+            Printează Fișa
           </button>
         </div>
       </div>
-
-      <style jsx>{`
-        .scrollbar-thin::-webkit-scrollbar {
-          width: 5px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-          background: #e2e8f0;
-          border-radius: 10px;
-        }
-      `}</style>
     </div>
   );
 }

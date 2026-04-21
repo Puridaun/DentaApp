@@ -99,7 +99,6 @@ export default function PatientsPage({ darkMode }) {
     }
   }
 
-  // Filtrare combinată (Search + Doctor)
   const filteredPatients = patients.filter((p) => {
     const matchesSearch =
       p.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -174,29 +173,32 @@ export default function PatientsPage({ darkMode }) {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto text-left font-sans">
-      <div className="flex justify-between items-center mb-10">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          Registru Pacienți
+    <div className="p-4 md:p-10 max-w-7xl mx-auto text-left font-sans animate-in fade-in duration-700">
+      {/* HEADER OPTIMIZAT */}
+      <div className="flex justify-between items-center mb-10 gap-4">
+        <h1
+          className={`text-2xl md:text-4xl font-light tracking-tight uppercase ${darkMode ? "text-white" : "text-slate-800"}`}
+        >
+          Pacienți
         </h1>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-olive-base hover:bg-olive-light text-white px-6 py-3.5 rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center gap-2"
+          className="bg-[#556B2F] text-white px-5 py-3 md:px-8 md:py-4 rounded-2xl font-medium text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap shrink-0"
         >
-          <Plus size={16} /> Pacient Nou
+          <Plus size={16} /> <span>Pacient Nou</span>
         </button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         {/* Search */}
         <div
-          className={`flex-[2] flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all ${darkMode ? "bg-slate-900 border-slate-700 shadow-sm" : "bg-white border-slate-100 shadow-sm"}`}
+          className={`flex-[2] flex items-center gap-3 px-5 py-4 rounded-2xl border transition-all ${darkMode ? "bg-slate-900 border-slate-800 shadow-sm" : "bg-white border-slate-100 shadow-sm"}`}
         >
-          <Search size={18} className="text-slate-500" />
+          <Search size={18} className="text-slate-400" />
           <input
             type="text"
             placeholder="Caută după nume sau telefon..."
-            className="bg-transparent outline-none w-full text-sm md:text-base"
+            className="bg-transparent outline-none w-full text-[13px] font-normal"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -204,11 +206,11 @@ export default function PatientsPage({ darkMode }) {
 
         {/* Filtru Doctor */}
         <div
-          className={`flex-1 flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all ${darkMode ? "bg-slate-900 border-slate-700 shadow-sm" : "bg-white border-slate-100 shadow-sm"}`}
+          className={`flex-1 flex items-center gap-3 px-5 py-4 rounded-2xl border transition-all ${darkMode ? "bg-slate-900 border-slate-800 shadow-sm" : "bg-white border-slate-100 shadow-sm"}`}
         >
-          <Filter size={18} className="text-slate-500" />
+          <Filter size={18} className="text-slate-400" />
           <select
-            className="bg-transparent outline-none w-full text-sm md:text-base cursor-pointer appearance-none"
+            className="bg-transparent outline-none w-full text-[11px] font-medium uppercase tracking-widest cursor-pointer appearance-none text-slate-500"
             value={selectedDoctorFilter}
             onChange={(e) => setSelectedDoctorFilter(e.target.value)}
           >
@@ -223,8 +225,11 @@ export default function PatientsPage({ darkMode }) {
       </div>
 
       {loading ? (
-        <div className="py-20 flex justify-center text-olive-base">
-          <Loader2 className="animate-spin" size={40} />
+        <div className="py-20 flex justify-center">
+          <Loader2
+            className="animate-spin text-[#556B2F] opacity-30"
+            size={40}
+          />
         </div>
       ) : (
         <PatientsTable

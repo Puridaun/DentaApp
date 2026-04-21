@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import AgendaGrid from "../components/Agenda/AgendaGrid";
 import AgendaModal from "../components/Agenda/AgendaModal";
+import { syncToGoogleCalendar } from "../lib/googleCalendar";
 
 export default function AgendaPage({ darkMode }) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -31,11 +32,13 @@ export default function AgendaPage({ darkMode }) {
         supabase
           .from("appointments")
           .select(
-            `*, patient:patients(full_name), doctor:profiles!doctor_id(full_name, color_preference)`,
+            `*, patient:patients(full_name), doctor:profiles!doctor_id(full_name, color_preference, calendar_email)`,
           )
           .eq("appointment_date", dateStr),
         supabase.from("patients").select("id, full_name").order("full_name"),
-        supabase.from("profiles").select("id, full_name, color_preference"),
+        supabase
+          .from("profiles")
+          .select("id, full_name, color_preference, calendar_email"),
       ]);
       if (apptsRes.data) setAppointments(apptsRes.data);
       if (patientsRes.data) setPatients(patientsRes.data);
@@ -82,10 +85,38 @@ export default function AgendaPage({ darkMode }) {
       notes: form.notes,
     };
 
-    const { error } = editingId
-      ? await supabase.from("appointments").update(payload).eq("id", editingId)
-      : await supabase.from("appointments").insert([payload]);
-    if (!error) {
+    const { data, error } = editingId
+      ? await supabase
+          .from("appointments")
+          .update(payload)
+          .eq("id", editingId)
+          .select()
+          .single()
+      : await supabase.from("appointments").insert([payload]).select().single();
+
+    if (!error && data) {
+      try {
+        const patientObj = patients.find(
+          (p) => String(p.id) === String(form.patientId),
+        );
+        // Găsim doctorul selectat pentru a-i lua email-ul de calendar
+        const doctorObj = doctors.find(
+          (d) => String(d.id) === String(form.doctorId),
+        );
+
+        await syncToGoogleCalendar(
+          {
+            date: payload.appointment_date,
+            time: payload.start_time,
+            procedure_name: payload.procedure_name,
+            patient_name: patientObj ? patientObj.full_name : "Pacient",
+            note: payload.notes,
+          },
+          doctorObj?.calendar_email,
+        ); // AUTOMAT: trimite la email-ul din DB
+      } catch (calErr) {
+        console.error("Google Sync Error:", calErr);
+      }
       setShowModal(false);
       fetchData();
     }
@@ -98,7 +129,7 @@ export default function AgendaPage({ darkMode }) {
       endTime: "21:00",
       patientId: "",
       procedure: "",
-      doctorId: "",
+      doctorId: doctors[0]?.id || "",
       notes: "",
     });
     setShowModal(true);
@@ -125,7 +156,7 @@ export default function AgendaPage({ darkMode }) {
         <div className="flex items-center gap-3 md:gap-5">
           <div
             onClick={() => dateInputRef.current.showPicker()}
-            className="bg-[#556B2F] p-3 md:p-4 rounded-[1.25rem] text-white shadow-xl cursor-pointer transition-all relative"
+            className="bg-[#556B2F] p-3 md:p-4 rounded-[1.25rem] text-white shadow-xl cursor-pointer relative"
           >
             <CalIcon size={24} className="md:w-7 md:h-7" />
             <input
