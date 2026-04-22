@@ -138,7 +138,7 @@ export default function AddPatientModal({
                   </div>
                   <div>
                     <label className={labelClass}>
-                      <Phone size={14} /> Telefon *
+                      <Phone size={14} /> Telefon
                     </label>
                     <input
                       type="tel"
@@ -150,7 +150,6 @@ export default function AddPatientModal({
                   </div>
                 </div>
 
-                {/* Email adăugat sub Data Nașterii și Telefon */}
                 <div>
                   <label className={labelClass}>
                     <Mail size={14} /> Email

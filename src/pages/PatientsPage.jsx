@@ -111,13 +111,11 @@ export default function PatientsPage({ darkMode }) {
   });
 
   const handleAddPatient = async () => {
-    if (
-      !newPatient.last_name.trim() ||
-      !newPatient.first_name.trim() ||
-      !newPatient.phone.trim()
-    ) {
-      return alert("⚠️ Numele, Prenumele și Telefonul sunt obligatorii!");
+    // Validare doar pentru nume și prenume
+    if (!newPatient.last_name.trim() || !newPatient.first_name.trim()) {
+      return alert("⚠️ Numele și Prenumele sunt obligatorii!");
     }
+
     setSaving(true);
     try {
       const {
@@ -127,10 +125,15 @@ export default function PatientsPage({ darkMode }) {
       const fullName =
         `${newPatient.last_name} ${newPatient.first_name}`.trim();
 
+      // --- LOGICA PENTRU CURĂȚARE DATE GOALE ---
       const cleanData = {
         ...newPatient,
         full_name: fullName,
         doctor_id: assignedDoctorId,
+        // Dacă birth_date, phone sau email sunt goale, le trimitem ca null, nu ca ""
+        birth_date: newPatient.birth_date === "" ? null : newPatient.birth_date,
+        phone: newPatient.phone === "" ? null : newPatient.phone,
+        email: newPatient.email === "" ? null : newPatient.email,
       };
 
       const { data: savedPatient, error: pError } = await supabase
@@ -174,7 +177,6 @@ export default function PatientsPage({ darkMode }) {
 
   return (
     <div className="p-4 md:p-10 max-w-7xl mx-auto text-left font-sans animate-in fade-in duration-700">
-      {/* HEADER OPTIMIZAT */}
       <div className="flex justify-between items-center mb-10 gap-4">
         <h1
           className={`text-2xl md:text-4xl font-light tracking-tight uppercase ${darkMode ? "text-white" : "text-slate-800"}`}
@@ -190,7 +192,6 @@ export default function PatientsPage({ darkMode }) {
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-8">
-        {/* Search */}
         <div
           className={`flex-[2] flex items-center gap-3 px-5 py-4 rounded-2xl border transition-all ${darkMode ? "bg-slate-900 border-slate-800 shadow-sm" : "bg-white border-slate-100 shadow-sm"}`}
         >
@@ -204,7 +205,6 @@ export default function PatientsPage({ darkMode }) {
           />
         </div>
 
-        {/* Filtru Doctor */}
         <div
           className={`flex-1 flex items-center gap-3 px-5 py-4 rounded-2xl border transition-all ${darkMode ? "bg-slate-900 border-slate-800 shadow-sm" : "bg-white border-slate-100 shadow-sm"}`}
         >
@@ -247,6 +247,7 @@ export default function PatientsPage({ darkMode }) {
         doctors={doctors}
         onSave={handleAddPatient}
         saving={saving}
+        darkMode={darkMode}
       />
     </div>
   );

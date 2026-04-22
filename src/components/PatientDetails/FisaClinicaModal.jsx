@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import {
   X,
   Edit3,
-  Printer,
   Check,
   User,
   Activity,
   FileText,
+  Phone,
+  Mail,
+  Calendar,
 } from "lucide-react";
 
 const AnamnezaRow = ({
@@ -26,15 +28,28 @@ const AnamnezaRow = ({
       {label}
     </label>
     {isEditing ? (
-      <textarea
-        value={value || ""}
-        onChange={(e) => onChange(field, e.target.value)}
-        className={`w-full p-4 rounded-2xl border outline-none text-[13px] transition-all min-h-[80px] resize-none ${
-          darkMode
-            ? "bg-slate-800 border-slate-700 focus:border-[#556B2F] text-white"
-            : "bg-slate-50 border-slate-100 focus:border-[#556B2F] text-slate-700"
-        }`}
-      />
+      type === "date" ? (
+        <input
+          type="date"
+          value={value || ""}
+          onChange={(e) => onChange(field, e.target.value)}
+          className={`w-full p-4 rounded-2xl border outline-none text-[13px] transition-all ${
+            darkMode
+              ? "bg-slate-800 border-slate-700 focus:border-[#556B2F] text-white"
+              : "bg-slate-50 border-slate-100 focus:border-[#556B2F] text-slate-700"
+          }`}
+        />
+      ) : (
+        <textarea
+          value={value || ""}
+          onChange={(e) => onChange(field, e.target.value)}
+          className={`w-full p-4 rounded-2xl border outline-none text-[13px] transition-all min-h-[60px] resize-none ${
+            darkMode
+              ? "bg-slate-800 border-slate-700 focus:border-[#556B2F] text-white"
+              : "bg-slate-50 border-slate-100 focus:border-[#556B2F] text-slate-700"
+          }`}
+        />
+      )
     ) : (
       <p
         className={`text-[13px] leading-relaxed whitespace-pre-wrap font-normal ${highlight ? "text-red-500 font-medium" : darkMode ? "text-slate-300" : "text-slate-600"}`}
@@ -68,6 +83,7 @@ export default function FisaClinicaModal({
 
   const onSaveInternal = () => {
     setPatient(localData);
+    // Folosim un mic delay pentru a ne asigura că setPatient a actualizat starea înainte de handleUpdate
     setTimeout(() => handleUpdate(), 100);
   };
 
@@ -92,11 +108,63 @@ export default function FisaClinicaModal({
             Fișă clinică
           </h2>
           <p className="text-md md:text-lg font-medium text-[#556B2F] mt-1 uppercase tracking-tight">
-            {patient.full_name}
+            {patient.last_name} {patient.first_name}
           </p>
         </div>
 
         <div className="space-y-10">
+          {/* 0. DATE IDENTITATE (ADĂUGAT ACUM) */}
+          <section className="space-y-6">
+            <p className="text-[10px] font-medium text-[#556B2F] uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
+              <User size={12} /> Date Identitate & Contact
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <AnamnezaRow
+                label="Nume"
+                value={isEditing ? localData.last_name : patient.last_name}
+                field="last_name"
+                isEditing={isEditing}
+                onChange={handleLocalChange}
+                darkMode={darkMode}
+              />
+              <AnamnezaRow
+                label="Prenume"
+                value={isEditing ? localData.first_name : patient.first_name}
+                field="first_name"
+                isEditing={isEditing}
+                onChange={handleLocalChange}
+                darkMode={darkMode}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <AnamnezaRow
+                label="Telefon"
+                value={isEditing ? localData.phone : patient.phone}
+                field="phone"
+                isEditing={isEditing}
+                onChange={handleLocalChange}
+                darkMode={darkMode}
+              />
+              <AnamnezaRow
+                label="Data Nașterii"
+                value={isEditing ? localData.birth_date : patient.birth_date}
+                field="birth_date"
+                type="date"
+                isEditing={isEditing}
+                onChange={handleLocalChange}
+                darkMode={darkMode}
+              />
+            </div>
+            <AnamnezaRow
+              label="Email"
+              value={isEditing ? localData.email : patient.email}
+              field="email"
+              isEditing={isEditing}
+              onChange={handleLocalChange}
+              darkMode={darkMode}
+            />
+          </section>
+
           {/* 1. MOTIVUL VIZITEI & ALERGII */}
           <section className="space-y-6">
             <AnamnezaRow

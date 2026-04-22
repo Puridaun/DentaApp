@@ -26,7 +26,6 @@ async function getAccessToken() {
 }
 
 export const syncToGoogleCalendar = async (appointment, targetEmail) => {
-    // Dacă doctorul nu are email setat în DB, trimitem la tine ca backup
     const finalEmail = targetEmail || "hritcuserafim01@gmail.com";
 
     try {

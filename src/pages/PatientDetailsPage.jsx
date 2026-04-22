@@ -7,6 +7,7 @@ import { TabBtn } from "../components/PatientDetails/PatientSubComponents";
 import FisaClinicaModal from "../components/PatientDetails/FisaClinicaModal";
 import HistorySection from "../components/PatientDetails/HistorySection";
 import TreatmentSection from "../components/PatientDetails/TreatmentSection";
+import RadiographySection from "../components/PatientDetails/RadiographySection"; // Import nou
 
 export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
   const [patient, setPatient] = useState(null);
@@ -60,13 +61,17 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
       setIsEditingInfo(true);
       return;
     }
+
+    // Curățăm datele pentru a evita erori de format (null în loc de "")
     const { error } = await supabase
       .from("patients")
       .update({
-        phone: patient.phone,
-        email: patient.email,
+        last_name: patient.last_name,
+        first_name: patient.first_name,
+        phone: patient.phone === "" ? null : patient.phone,
+        email: patient.email === "" ? null : patient.email,
         allergies: patient.allergies,
-        birth_date: patient.birth_date,
+        birth_date: patient.birth_date === "" ? null : patient.birth_date,
         reason: patient.reason,
         observations: patient.observations,
         antecedente_familiale: patient.antecedente_familiale,
@@ -106,7 +111,7 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
         darkMode={darkMode}
       />
 
-      {/* Navigare - Modificat: Doar TRATAMENT */}
+      {/* Navigare - Am adăugat tab-ul Radiografii */}
       <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-800 mb-8 overflow-x-auto no-scrollbar">
         <TabBtn
           active={activeSubTab === "istoric"}
@@ -126,6 +131,13 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
         >
           <Plus size={14} /> {continueFrom ? "Finalizare Vizită" : "Tratament"}
         </button>
+
+        {/* TAB NOU: RADIOGRAFII */}
+        <TabBtn
+          active={activeSubTab === "radiografii"}
+          label="Radiografii"
+          onClick={() => setActiveSubTab("radiografii")}
+        />
       </div>
 
       <div className="min-h-[400px]">
@@ -150,11 +162,19 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
             setIsFisaOpen={setIsFisaOpen}
           />
         )}
+
+        {/* SECȚIUNE NOUĂ: RADIOGRAFII */}
+        {activeSubTab === "radiografii" && (
+          <RadiographySection patientId={patientId} darkMode={darkMode} />
+        )}
       </div>
 
       <FisaClinicaModal
         isOpen={isFisaOpen}
-        onClose={() => setIsFisaOpen(false)}
+        onClose={() => {
+          setIsFisaOpen(false);
+          setIsEditingInfo(false);
+        }}
         patient={patient}
         isEditing={isEditingInfo}
         setPatient={setPatient}

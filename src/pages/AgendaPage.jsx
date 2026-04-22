@@ -51,6 +51,18 @@ export default function AgendaPage({ darkMode }) {
 
   useEffect(() => {
     fetchData();
+
+    // Realtime: Actualizează agenda dacă altcineva face o modificare
+    const channel = supabase
+      .channel("db-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointments" },
+        () => fetchData(),
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
   }, [fetchData]);
 
   const handleSave = async () => {
@@ -99,7 +111,6 @@ export default function AgendaPage({ darkMode }) {
         const patientObj = patients.find(
           (p) => String(p.id) === String(form.patientId),
         );
-        // Găsim doctorul selectat pentru a-i lua email-ul de calendar
         const doctorObj = doctors.find(
           (d) => String(d.id) === String(form.doctorId),
         );
@@ -113,7 +124,7 @@ export default function AgendaPage({ darkMode }) {
             note: payload.notes,
           },
           doctorObj?.calendar_email,
-        ); // AUTOMAT: trimite la email-ul din DB
+        );
       } catch (calErr) {
         console.error("Google Sync Error:", calErr);
       }
