@@ -82,9 +82,8 @@ export default function FisaClinicaModal({
   };
 
   const onSaveInternal = () => {
-    setPatient(localData);
-    // Folosim un mic delay pentru a ne asigura că setPatient a actualizat starea înainte de handleUpdate
-    setTimeout(() => handleUpdate(), 100);
+    // Pasăm datele locale direct funcției handleUpdate din părinte
+    handleUpdate(localData);
   };
 
   return (
@@ -113,7 +112,6 @@ export default function FisaClinicaModal({
         </div>
 
         <div className="space-y-10">
-          {/* 0. DATE IDENTITATE (ADĂUGAT ACUM) */}
           <section className="space-y-6">
             <p className="text-[10px] font-medium text-[#556B2F] uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
               <User size={12} /> Date Identitate & Contact
@@ -165,7 +163,6 @@ export default function FisaClinicaModal({
             />
           </section>
 
-          {/* 1. MOTIVUL VIZITEI & ALERGII */}
           <section className="space-y-6">
             <AnamnezaRow
               label="Motiv Vizită"
@@ -190,7 +187,6 @@ export default function FisaClinicaModal({
             />
           </section>
 
-          {/* 2. ANAMNEZA MEDICALĂ DETALIATĂ */}
           <section className="space-y-6 pt-4">
             <p className="text-[10px] font-medium text-[#556B2F] uppercase tracking-[0.2em] flex items-center gap-2 mb-6">
               <Activity size={12} /> Anamneza Medicală
@@ -233,7 +229,6 @@ export default function FisaClinicaModal({
             />
           </section>
 
-          {/* 3. EXAMEN CLINIC & INVESTIGAȚII */}
           <section className="space-y-6 pt-4">
             <p className="text-[10px] font-medium text-[#556B2F] uppercase tracking-[0.2em] flex items-center gap-2 mb-6">
               <FileText size={12} /> Examen Clinic & Investigații
@@ -267,7 +262,6 @@ export default function FisaClinicaModal({
           </section>
         </div>
 
-        {/* BUTOANE ACȚIUNE */}
         <div className="mt-12 flex flex-col gap-4 print:hidden">
           {isEditing ? (
             <button

@@ -7,7 +7,7 @@ import { TabBtn } from "../components/PatientDetails/PatientSubComponents";
 import FisaClinicaModal from "../components/PatientDetails/FisaClinicaModal";
 import HistorySection from "../components/PatientDetails/HistorySection";
 import TreatmentSection from "../components/PatientDetails/TreatmentSection";
-import RadiographySection from "../components/PatientDetails/RadiographySection"; // Import nou
+import RadiographySection from "../components/PatientDetails/RadiographySection";
 
 export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
   const [patient, setPatient] = useState(null);
@@ -16,29 +16,12 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [isFisaOpen, setIsFisaOpen] = useState(false);
   const [continueFrom, setContinueFrom] = useState(null);
-  const [currentDoctorName, setCurrentDoctorName] = useState("");
 
   useEffect(() => {
     fetchPatientData();
-    fetchCurrentDoctor();
   }, [patientId]);
 
-  async function fetchCurrentDoctor() {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (session) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", session.user.id)
-        .single();
-      setCurrentDoctorName(profile?.full_name || session.user.email);
-    }
-  }
-
   async function fetchPatientData() {
-    setLoading(true);
     const { data } = await supabase
       .from("patients")
       .select(
@@ -56,35 +39,39 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
     setLoading(false);
   }
 
-  const handleUpdate = async (forceEdit = false) => {
-    if (forceEdit === true) {
+  const handleUpdate = async (updatedData = null) => {
+    if (updatedData === true) {
       setIsEditingInfo(true);
       return;
     }
+    if (updatedData) {
+      const fullName =
+        `${updatedData.last_name || ""} ${updatedData.first_name || ""}`.trim();
+      const { error } = await supabase
+        .from("patients")
+        .update({
+          first_name: updatedData.first_name,
+          last_name: updatedData.last_name,
+          full_name: fullName,
+          phone: updatedData.phone === "" ? null : updatedData.phone,
+          email: updatedData.email === "" ? null : updatedData.email,
+          birth_date:
+            updatedData.birth_date === "" ? null : updatedData.birth_date,
+          allergies: updatedData.allergies,
+          reason: updatedData.reason,
+          observations: updatedData.observations,
+          antecedente_familiale: updatedData.antecedente_familiale,
+          antecedente_personale: updatedData.antecedente_personale,
+          medicatie_fond: updatedData.medicatie_fond,
+          examen_clinic: updatedData.examen_clinic,
+          investigatii: updatedData.investigatii,
+        })
+        .eq("id", patientId);
 
-    // Curățăm datele pentru a evita erori de format (null în loc de "")
-    const { error } = await supabase
-      .from("patients")
-      .update({
-        last_name: patient.last_name,
-        first_name: patient.first_name,
-        phone: patient.phone === "" ? null : patient.phone,
-        email: patient.email === "" ? null : patient.email,
-        allergies: patient.allergies,
-        birth_date: patient.birth_date === "" ? null : patient.birth_date,
-        reason: patient.reason,
-        observations: patient.observations,
-        antecedente_familiale: patient.antecedente_familiale,
-        antecedente_personale: patient.antecedente_personale,
-        medicatie_fond: patient.medicatie_fond,
-        examen_clinic: patient.examen_clinic,
-        investigatii: patient.investigatii,
-      })
-      .eq("id", patientId);
-
-    if (!error) {
-      setIsEditingInfo(false);
-      fetchPatientData();
+      if (!error) {
+        setIsEditingInfo(false);
+        fetchPatientData();
+      }
     }
   };
 
@@ -111,7 +98,6 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
         darkMode={darkMode}
       />
 
-      {/* Navigare - Am adăugat tab-ul Radiografii */}
       <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-800 mb-8 overflow-x-auto no-scrollbar">
         <TabBtn
           active={activeSubTab === "istoric"}
@@ -131,8 +117,6 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
         >
           <Plus size={14} /> {continueFrom ? "Finalizare Vizită" : "Tratament"}
         </button>
-
-        {/* TAB NOU: RADIOGRAFII */}
         <TabBtn
           active={activeSubTab === "radiografii"}
           label="Radiografii"
@@ -146,9 +130,28 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
             treatments={patient?.treatments || []}
             darkMode={darkMode}
             onContinue={handleContinueTreatment}
+            onUpdate={(updatedSession) => {
+              // Dacă primim un obiect (adică e Edit), îl injectăm direct în lista curentă
+              if (updatedSession && typeof updatedSession === "object") {
+                setPatient((prev) => ({
+                  ...prev,
+                  treatments: prev.treatments.map((t) =>
+                    t.id === updatedSession.id
+                      ? { ...t, ...updatedSession }
+                      : t,
+                  ),
+                }));
+              } else {
+                // Dacă primim un ID sau nimic (adică e Delete), facem fetch-ul normal
+                fetchPatientData();
+              }
+
+              // Resetăm tab-urile și starea de continuare
+              setContinueFrom(null);
+              setActiveSubTab("istoric");
+            }}
           />
         )}
-
         {activeSubTab === "manopere" && (
           <TreatmentSection
             patientId={patient.id}
@@ -162,8 +165,6 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
             setIsFisaOpen={setIsFisaOpen}
           />
         )}
-
-        {/* SECȚIUNE NOUĂ: RADIOGRAFII */}
         {activeSubTab === "radiografii" && (
           <RadiographySection patientId={patientId} darkMode={darkMode} />
         )}

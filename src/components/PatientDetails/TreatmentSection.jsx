@@ -79,8 +79,8 @@ export default function TreatmentSection({
 
   const [newT, setNewT] = useState({
     name: continueFrom ? continueFrom.procedure_name : "",
-    cost: "", // Câmp gol
-    paid: "", // Câmp gol
+    cost: "",
+    paid: "",
     note: "",
     indicatii: "",
     status: "Finalizată",
@@ -97,6 +97,7 @@ export default function TreatmentSection({
     const currentTime = now.toLocaleTimeString("en-GB", {
       hour: "2-digit",
       minute: "2-digit",
+      // Am scos secundele si de aici pentru consistenta
     });
 
     const payload = {
@@ -106,7 +107,7 @@ export default function TreatmentSection({
       total_cost: parseFloat(newT.cost || 0),
       amount_paid: parseFloat(newT.paid || 0),
       additional_info: newT.note,
-      indicatii_pacient: newT.indicatii,
+      indicatii_pacient: newT.indicatii || null, // Trimitem null daca e gol, nu "EMPTY"
       status: newT.status,
       tooth_number: selectedTeeth.sort().join(", "),
       treatment_date: newT.date,
@@ -127,6 +128,7 @@ export default function TreatmentSection({
           .update({ status: "Continuat" })
           .eq("id", continueFrom.id);
       }
+      // Trimitem semnalul de update catre parinte (PatientDetailsPage)
       onUpdate();
     }
   };
