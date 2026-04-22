@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Edit3,
   Stethoscope,
+  MessageSquare,
 } from "lucide-react";
 
 import arcadaSupImg from "../../assets/Arcada superioara.png";
@@ -77,6 +78,10 @@ export default function TreatmentSection({
     continueFrom?.tooth_number ? continueFrom.tooth_number.split(", ") : [],
   );
 
+  // Stări noi pentru Note per Dinte
+  const [activeTooth, setActiveTooth] = useState(null);
+  const [toothNotes, setToothNotes] = useState({});
+
   const [newT, setNewT] = useState({
     name: continueFrom ? continueFrom.procedure_name : "",
     cost: "",
@@ -86,6 +91,15 @@ export default function TreatmentSection({
     status: "Finalizată",
     date: new Date().toISOString().split("T")[0],
   });
+
+  const handleNextTooth = () => {
+    const currentIndex = selectedTeeth.indexOf(activeTooth);
+    if (currentIndex < selectedTeeth.length - 1) {
+      setActiveTooth(selectedTeeth[currentIndex + 1]);
+    } else {
+      setActiveTooth(null);
+    }
+  };
 
   const save = async () => {
     const {
@@ -97,8 +111,16 @@ export default function TreatmentSection({
     const currentTime = now.toLocaleTimeString("en-GB", {
       hour: "2-digit",
       minute: "2-digit",
-      // Am scos secundele si de aici pentru consistenta
     });
+
+    // Combinăm notele individuale cu nota generală
+    const detailedNotes = Object.entries(toothNotes)
+      .map(([tooth, note]) => `Dinte ${tooth}: ${note}`)
+      .join(" | ");
+
+    const finalNote = newT.note
+      ? `${detailedNotes ? detailedNotes + " — " : ""}${newT.note}`
+      : detailedNotes;
 
     const payload = {
       patient_id: patientId,
@@ -106,8 +128,8 @@ export default function TreatmentSection({
       procedure_name: newT.name,
       total_cost: parseFloat(newT.cost || 0),
       amount_paid: parseFloat(newT.paid || 0),
-      additional_info: newT.note,
-      indicatii_pacient: newT.indicatii || null, // Trimitem null daca e gol, nu "EMPTY"
+      additional_info: finalNote,
+      indicatii_pacient: newT.indicatii || null,
       status: newT.status,
       tooth_number: selectedTeeth.sort().join(", "),
       treatment_date: newT.date,
@@ -118,7 +140,6 @@ export default function TreatmentSection({
     };
 
     const { error } = await supabase.from("treatments").insert([payload]);
-
     if (error) {
       alert("Eroare la salvare: " + error.message);
     } else {
@@ -128,7 +149,6 @@ export default function TreatmentSection({
           .update({ status: "Continuat" })
           .eq("id", continueFrom.id);
       }
-      // Trimitem semnalul de update catre parinte (PatientDetailsPage)
       onUpdate();
     }
   };
@@ -137,6 +157,7 @@ export default function TreatmentSection({
     <div
       className={`p-4 md:p-8 rounded-[2.5rem] border transition-all duration-300 ${darkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}
     >
+      {/* STEP 1 & 1.5 rămân la fel */}
       {step === 1 && (
         <div className="flex flex-col gap-2">
           <span className="text-[11px] font-medium uppercase text-[#556B2F] tracking-widest mb-4 text-left px-1">
@@ -193,11 +214,12 @@ export default function TreatmentSection({
         </div>
       )}
 
+      {/* STEP 2 - MODIFICAT PENTRU NOTE PER DINTE */}
       {step === 2 && (
         <div className="space-y-6 animate-in fade-in">
           <div className="flex justify-between items-center border-b border-slate-50 pb-4">
             <span className="text-[11px] font-medium uppercase text-[#556B2F] tracking-widest">
-              Dinți
+              Selecție Dinți & Detalii
             </span>
             <button
               onClick={() => setStep(1)}
@@ -206,75 +228,136 @@ export default function TreatmentSection({
               <ChevronLeft size={12} /> Înapoi
             </button>
           </div>
-          <div className="flex flex-col gap-3">
-            {!arcadaSel || arcadaSel === "superioara" ? (
-              <button
-                onClick={() => setArcadaSel("superioara")}
-                className={`w-full rounded-2xl border p-3 ${arcadaSel === "superioara" ? "border-[#556B2F] bg-[#f2f6f0]/30" : "border-slate-50 bg-white"}`}
-              >
-                <img
-                  src={arcadaSupImg}
-                  alt="S"
-                  className="max-h-[100px] mx-auto"
-                />
-              </button>
-            ) : null}
-            {!arcadaSel || arcadaSel === "inferioara" ? (
-              <button
-                onClick={() => setArcadaSel("inferioara")}
-                className={`w-full rounded-2xl border p-3 ${arcadaSel === "inferioara" ? "border-[#556B2F] bg-[#f2f6f0]/30" : "border-slate-50 bg-white"}`}
-              >
-                <img
-                  src={arcadaInfImg}
-                  alt="I"
-                  className="max-h-[100px] mx-auto"
-                />
-              </button>
-            ) : null}
-          </div>
 
-          {arcadaSel && (
-            <div className="space-y-6 pt-2">
-              <button
-                onClick={() => setArcadaSel(null)}
-                className="text-[10px] font-bold text-[#556B2F] uppercase tracking-widest flex items-center gap-1 mb-4"
-              >
-                <ChevronLeft size={12} /> Schimbă arcada
-              </button>
-              <div className="flex gap-4">
-                {["stanga", "dreapta"].map((side) => (
-                  <div key={side} className="flex-1 flex flex-col gap-1.5">
-                    {odontogramaData[arcadaSel][side].teeth.map((t) => {
-                      const id = t.toString();
-                      const sel = selectedTeeth.includes(id);
-                      return (
-                        <button
-                          key={id}
-                          onClick={() =>
-                            setSelectedTeeth((s) =>
-                              sel ? s.filter((x) => x !== id) : [...s, id],
-                            )
-                          }
-                          className={`w-full py-2.5 rounded-lg border transition-all text-[12px] font-bold flex items-center justify-center ${getToothColor(id, sel, darkMode)}`}
-                        >
-                          {id}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))}
+          {!activeTooth ? (
+            <>
+              <div className="flex flex-col gap-3">
+                {(!arcadaSel || arcadaSel === "superioara") && (
+                  <button
+                    onClick={() => setArcadaSel("superioara")}
+                    className={`w-full rounded-2xl border p-3 ${arcadaSel === "superioara" ? "border-[#556B2F] bg-[#f2f6f0]/30" : "border-slate-50 bg-white"}`}
+                  >
+                    <img
+                      src={arcadaSupImg}
+                      alt="S"
+                      className="max-h-[100px] mx-auto"
+                    />
+                  </button>
+                )}
+                {(!arcadaSel || arcadaSel === "inferioara") && (
+                  <button
+                    onClick={() => setArcadaSel("inferioara")}
+                    className={`w-full rounded-2xl border p-3 ${arcadaSel === "inferioara" ? "border-[#556B2F] bg-[#f2f6f0]/30" : "border-slate-50 bg-white"}`}
+                  >
+                    <img
+                      src={arcadaInfImg}
+                      alt="I"
+                      className="max-h-[100px] mx-auto"
+                    />
+                  </button>
+                )}
               </div>
-              <button
-                onClick={() => setStep(3)}
-                className="w-full py-4 bg-[#556B2F] text-white rounded-xl font-medium uppercase text-[11px] tracking-widest shadow-lg"
-              >
-                Continuă ({selectedTeeth.length} dinți)
-              </button>
+
+              {arcadaSel && (
+                <div className="space-y-6 pt-2">
+                  <button
+                    onClick={() => setArcadaSel(null)}
+                    className="text-[10px] font-bold text-[#556B2F] uppercase tracking-widest flex items-center gap-1 mb-4"
+                  >
+                    <ChevronLeft size={12} /> Schimbă arcada
+                  </button>
+                  <div className="flex gap-4">
+                    {["stanga", "dreapta"].map((side) => (
+                      <div key={side} className="flex-1 flex flex-col gap-1.5">
+                        {odontogramaData[arcadaSel][side].teeth.map((t) => {
+                          const id = t.toString();
+                          const sel = selectedTeeth.includes(id);
+                          return (
+                            <button
+                              key={id}
+                              onClick={() => {
+                                const newSelection = sel
+                                  ? selectedTeeth.filter((x) => x !== id)
+                                  : [...selectedTeeth, id];
+                                setSelectedTeeth(newSelection);
+                                if (!sel) setActiveTooth(id); // Deschide notele dacă îl selectezi acum
+                              }}
+                              className={`w-full py-2.5 rounded-lg border transition-all text-[12px] font-bold flex items-center justify-center ${getToothColor(id, sel, darkMode)}`}
+                            >
+                              {id}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+
+                  {selectedTeeth.length > 0 && (
+                    <button
+                      onClick={() => setStep(3)}
+                      className="w-full py-4 bg-[#556B2F] text-white rounded-xl font-medium uppercase text-[11px] tracking-widest shadow-lg"
+                    >
+                      Continuă la Finalizare ({selectedTeeth.length} dinți)
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            /* ZONA DE NOTE PENTRU DINTELE ACTIV */
+            <div className="p-6 bg-[#f2f6f0]/50 rounded-[2rem] border border-[#556B2F]/10 animate-in zoom-in duration-200 text-left">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#556B2F] text-white flex items-center justify-center text-[12px] font-bold">
+                    {activeTooth}
+                  </div>
+                  <h4 className="text-[13px] font-bold uppercase text-[#556B2F] tracking-tight">
+                    Detalii Lucrare
+                  </h4>
+                </div>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                  Dinte {selectedTeeth.indexOf(activeTooth) + 1} /{" "}
+                  {selectedTeeth.length}
+                </span>
+              </div>
+
+              <textarea
+                autoFocus
+                className="w-full p-4 rounded-2xl border-none shadow-sm text-[13px] min-h-[120px] outline-none focus:ring-1 focus:ring-[#556B2F]/20 resize-none placeholder:text-slate-300"
+                placeholder="Ex: Obturație cavitate clasa II, bizotare smalț..."
+                value={toothNotes[activeTooth] || ""}
+                onChange={(e) =>
+                  setToothNotes({
+                    ...toothNotes,
+                    [activeTooth]: e.target.value,
+                  })
+                }
+              />
+
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => setActiveTooth(null)}
+                  className="flex-1 py-3 border border-slate-100 bg-white text-slate-400 rounded-xl text-[10px] font-bold uppercase tracking-widest"
+                >
+                  Înapoi
+                </button>
+                <button
+                  onClick={handleNextTooth}
+                  className="flex-1 py-3 bg-[#556B2F] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-md flex items-center justify-center gap-2"
+                >
+                  {selectedTeeth.indexOf(activeTooth) ===
+                  selectedTeeth.length - 1
+                    ? "Gata"
+                    : "Următorul"}
+                  <ArrowRight size={12} />
+                </button>
+              </div>
             </div>
           )}
         </div>
       )}
 
+      {/* STEP 3 - Finalizare (Rămâne la fel ca cel original) */}
       {step === 3 && (
         <div className="space-y-5 animate-in fade-in text-left">
           <div className="flex justify-between items-center border-b border-slate-50 pb-4">
@@ -300,7 +383,7 @@ export default function TreatmentSection({
             ))}
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1 text-left">
+            <div className="space-y-1">
               <label className="text-[9px] font-medium text-slate-400 uppercase tracking-widest ml-1">
                 Cost Azi (RON)
               </label>
@@ -312,7 +395,7 @@ export default function TreatmentSection({
                 placeholder="..."
               />
             </div>
-            <div className="space-y-1 text-left">
+            <div className="space-y-1">
               <label className="text-[9px] font-medium text-slate-400 uppercase tracking-widest ml-1">
                 Achitat Azi (RON)
               </label>
@@ -325,18 +408,18 @@ export default function TreatmentSection({
               />
             </div>
           </div>
-          <div className="space-y-1 text-left">
+          <div className="space-y-1">
             <label className="text-[9px] font-medium text-slate-400 uppercase tracking-widest ml-1">
-              Observații Ședință (Doctor)
+              Observații Generale (Opțional)
             </label>
             <textarea
-              placeholder="Note clinice..."
+              placeholder="Alte note de final..."
               value={newT.note}
               onChange={(e) => setNewT({ ...newT, note: e.target.value })}
               className="w-full p-4 rounded-2xl border min-h-[80px] outline-none text-[13px] resize-none focus:border-[#556B2F] bg-slate-50"
             />
           </div>
-          <div className="space-y-1 text-left">
+          <div className="space-y-1">
             <label className="text-[9px] font-medium text-slate-400 uppercase tracking-widest ml-1">
               Indicații Post-Op (Pacient)
             </label>
