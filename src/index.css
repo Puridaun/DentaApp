@@ -100,3 +100,89 @@ body {
 #root {
   width: 100%;
 }
+
+/* --- Stiluri Odontogramă --- */
+.tooth-chart-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0;
+  background-color: #FFC0C0;
+  border-radius: 2.5rem;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.spots polygon,
+.spots path {
+  transition: fill .25s;
+  cursor: pointer;
+  stroke: #c4a796;
+  stroke-width: 0.5px;
+}
+
+.spots polygon:hover,
+.spots path:hover {
+  fill: #f8fafc !important;
+}
+
+.selected-tooth {
+  stroke: #556B2F !important;
+  stroke-width: 2.5px !important;
+}
+
+#toothLabels text {
+  pointer-events: none;
+  user-select: none;
+  font-weight: 900;
+  fill: #4a5568;
+  font-size: 14px;
+}
+
+.quick-actions-container {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  width: 92%;
+  padding: 15px 0;
+  margin-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.action-chip {
+  flex: 1;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #4a5c28;
+  font-weight: 700;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  font-size: 10px;
+  padding: 10px 2px;
+  white-space: nowrap;
+  cursor: pointer;
+  /* Aceasta anulează regula globală de CAPS */
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+.action-chip.active-zone {
+  background-color: #556B2F !important;
+  color: white !important;
+  border-color: #556B2F !important;
+}
+
+@media (min-width: 768px) {
+  .action-chip {
+    font-size: 13px;
+    padding: 12px 10px;
+  }
+
+  .quick-actions-container {
+    gap: 12px;
+  }
+}

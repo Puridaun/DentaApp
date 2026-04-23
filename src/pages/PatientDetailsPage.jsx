@@ -31,6 +31,9 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
       .single();
 
     if (data) {
+      // Sortarea inteligentă: Punem tratamentele în ordine cronologică generală
+      // Logica de "pachet" (grupare după parent_id) este gestionată direct de HistorySection
+      // Aici doar ne asigurăm că avem toate datele proaspete
       const sortedTreatments = (data.treatments || []).sort(
         (a, b) => new Date(b.treatment_date) - new Date(a.treatment_date),
       );
@@ -131,31 +134,20 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
             darkMode={darkMode}
             onContinue={handleContinueTreatment}
             onUpdate={(updatedSession) => {
-              // Dacă primim un obiect (adică e Edit), îl injectăm direct în lista curentă
-              if (updatedSession && typeof updatedSession === "object") {
-                setPatient((prev) => ({
-                  ...prev,
-                  treatments: prev.treatments.map((t) =>
-                    t.id === updatedSession.id
-                      ? { ...t, ...updatedSession }
-                      : t,
-                  ),
-                }));
-              } else {
-                // Dacă primim un ID sau nimic (adică e Delete), facem fetch-ul normal
-                fetchPatientData();
-              }
-
-              // Resetăm tab-urile și starea de continuare
+              // Menținem "magia" pachetului de cărți:
+              // Reîmprospătăm datele complet din baza de date pentru a recalcula legăturile parent_id
+              fetchPatientData();
               setContinueFrom(null);
               setActiveSubTab("istoric");
             }}
           />
         )}
+
         {activeSubTab === "manopere" && (
           <TreatmentSection
             patientId={patient.id}
             onUpdate={() => {
+              // Când salvăm o manoperă nouă/continuare, refacem tot setul de date
               fetchPatientData();
               setContinueFrom(null);
               setActiveSubTab("istoric");
@@ -165,6 +157,7 @@ export default function PatientDetailsPage({ patientId, onBack, darkMode }) {
             setIsFisaOpen={setIsFisaOpen}
           />
         )}
+
         {activeSubTab === "radiografii" && (
           <RadiographySection patientId={patientId} darkMode={darkMode} />
         )}
