@@ -21,7 +21,6 @@ export default function HistorySection({
 }) {
   const [selectedSession, setSelectedSession] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({});
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(null);
 
   if (!treatments || treatments.length === 0) {
@@ -55,6 +54,28 @@ export default function HistorySection({
     }
   };
 
+  const handleDelete = async (session) => {
+    if (session.procedure_name === "Înregistrare & Fișă Inițială")
+      return alert("Nu se poate șterge fișa inițială.");
+    if (!window.confirm("Sigur dorești să ștergi această ședință?")) return;
+
+    const { error } = await supabase
+      .from("treatments")
+      .delete()
+      .eq("id", session.id);
+
+    if (error) {
+      return alert(
+        error.code === "23503"
+          ? "Șterge mai întâi continuările."
+          : error.message,
+      );
+    }
+
+    setSelectedSession(null);
+    if (onUpdate) onUpdate(session.id);
+  };
+
   const groupTreatments = (items) => {
     const groups = {};
     items.forEach((t) => {
@@ -77,7 +98,54 @@ export default function HistorySection({
       );
   };
 
+  // Funcție inteligentă care separă Notele pe Dinte de Observații
+  const getParsedNotes = (session) => {
+    let obs = session.additional_info || "";
+    let notesMap = {};
+
+    if (obs.includes(" --- OBS: ")) {
+      const parts = obs.split(" --- OBS: ");
+      const tNotes = parts[0];
+      obs = parts[1] || "";
+      tNotes.split(" | ").forEach((p) => {
+        const [t, ...rest] = p.split(": ");
+        if (t) notesMap[t.trim()] = rest.join(": ").trim() || "-";
+      });
+    } else {
+      // Verificăm dacă sunt doar note de dinți
+      let isToothNotesOnly = false;
+      if (session.tooth_number) {
+        const teeth = session.tooth_number.split(", ");
+        if (teeth.some((t) => obs.startsWith(t.trim() + ":"))) {
+          isToothNotesOnly = true;
+          obs.split(" | ").forEach((p) => {
+            const [t, ...rest] = p.split(": ");
+            if (t) notesMap[t.trim()] = rest.join(": ").trim() || "-";
+          });
+          obs = ""; // Golim observațiile pentru că erau doar note de dinți
+        }
+      }
+    }
+
+    // Ne asigurăm că TOȚI dinții selectați apar în listă (chiar și cu "-")
+    if (session.tooth_number) {
+      session.tooth_number.split(", ").forEach((t) => {
+        const num = t.trim();
+        if (num && !notesMap[num]) {
+          notesMap[num] = "-";
+        }
+      });
+    }
+
+    return { obs: obs.trim(), notesMap };
+  };
+
   const grouped = groupTreatments(treatments);
+
+  // Datele parșate pentru modalul deschis
+  const parsedModalNotes = selectedSession
+    ? getParsedNotes(selectedSession)
+    : { obs: "", notesMap: {} };
 
   return (
     <div className="relative pl-6 md:pl-10 space-y-12 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] before:bg-slate-100 dark:before:bg-slate-800 text-left font-sans">
@@ -89,7 +157,7 @@ export default function HistorySection({
         return (
           <div key={gIdx} className="relative">
             <div
-              className={`absolute -left-[20px] md:-left-[29px] top-2.5 w-[14px] h-[14px] rounded-full border-2 border-white z-50 ${isPending ? "bg-amber-500 animate-pulse" : "bg-[#556B2F]"}`}
+              className={`absolute -left-[20px] md:-left-[29px] top-2.5 w-[14px] h-[14px] rounded-full border-2 border-white dark:border-slate-900 z-50 ${isPending ? "bg-amber-500 animate-pulse" : "bg-[#556B2F]"}`}
             />
 
             <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-3 px-2">
@@ -157,6 +225,9 @@ export default function HistorySection({
                       : "bg-slate-50 border-slate-200 opacity-60 scale-[0.97] z-10";
                 }
 
+                // Extragem observația curată pentru listă
+                const sessionNotes = getParsedNotes(session);
+
                 return (
                   <div
                     key={session.id}
@@ -183,18 +254,17 @@ export default function HistorySection({
                       </span>
                     </div>
 
-                    {session.additional_info && (
+                    {/* Arătăm doar Observația pe card, fără notele pe dinți */}
+                    {sessionNotes.obs && (
                       <div className="flex gap-3 items-start">
                         <MessageCircle
                           size={16}
                           className="text-slate-300 mt-0.5"
                         />
-                        <p className="text-[13px] md:text-[14px] font-medium italic line-clamp-2">
-                          "
-                          {session.additional_info.includes(" --- OBS: ")
-                            ? session.additional_info.split(" --- OBS: ")[1]
-                            : session.additional_info}
-                          "
+                        <p
+                          className={`text-[13px] md:text-[14px] font-medium italic line-clamp-2`}
+                        >
+                          "{sessionNotes.obs}"
                         </p>
                       </div>
                     )}
@@ -262,17 +332,17 @@ export default function HistorySection({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Dinte lucrat
+                    Dinți lucrați
                   </label>
-                  {!isEditing &&
-                    selectedSession.additional_info?.includes(":") && (
-                      <button
-                        onClick={() => setIsEditing(true)}
-                        className="flex items-center gap-1.5 px-3 py-1 bg-[#f2f6f0] border border-[#556B2F]/10 text-[#556B2F] rounded-full text-[10px] font-bold hover:bg-[#556B2F] hover:text-white transition-all !text-transform-none !tracking-normal"
-                      >
-                        <Edit2 size={12} /> Detalii Dinți
-                      </button>
-                    )}
+                  {/* Butonul apare automat dacă avem dinți salvați */}
+                  {!isEditing && selectedSession.tooth_number && (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="flex items-center gap-1.5 px-3 py-1 bg-[#f2f6f0] border border-[#556B2F]/10 text-[#556B2F] rounded-full text-[10px] font-bold hover:bg-[#556B2F] hover:text-white transition-all !text-transform-none !tracking-normal"
+                    >
+                      <Edit2 size={12} /> Detalii Dinți
+                    </button>
+                  )}
                 </div>
                 <div className="text-[15px] font-bold text-[#556B2F]">
                   {selectedSession.tooth_number
@@ -281,50 +351,59 @@ export default function HistorySection({
                 </div>
               </div>
 
-              {isEditing && selectedSession.additional_info?.includes(":") && (
+              {/* LISTA DETALIATĂ A DINȚILOR */}
+              {isEditing && selectedSession.tooth_number && (
                 <div className="p-5 bg-[#f2f6f0]/40 rounded-[2rem] border border-[#556B2F]/10 space-y-4 animate-in fade-in slide-in-from-top-2">
                   <h5 className="text-[10px] font-bold text-[#556B2F] uppercase tracking-tighter mb-1">
                     Note per dinte:
                   </h5>
-                  {selectedSession.additional_info
-                    .split(" --- OBS: ")[0]
-                    .split(" | ")
-                    .map((item, idx) => {
-                      const [tooth, note] = item.split(": ");
-                      if (!tooth) return null;
-                      return (
-                        <div
-                          key={idx}
-                          className="flex flex-col gap-1 border-b border-white/60 pb-3 last:border-0 text-slate-800"
-                        >
-                          <span className="text-[12px] font-black">
-                            Dintele {tooth}
-                          </span>
-                          <input
-                            className="w-full bg-transparent border-b border-dashed border-slate-200 py-1 outline-none text-[13px]"
-                            defaultValue={note}
-                          />
-                        </div>
-                      );
-                    })}
+                  {Object.entries(parsedModalNotes.notesMap).map(
+                    ([tooth, note], idx) => (
+                      <div
+                        key={idx}
+                        className="flex flex-col gap-1 border-b border-[#556B2F]/10 pb-3 last:border-0"
+                      >
+                        <span className="text-[12px] font-black text-slate-700">
+                          Dintele {tooth}
+                        </span>
+                        <p className="text-[13px] font-medium italic text-slate-500">
+                          {note}
+                        </p>
+                      </div>
+                    ),
+                  )}
                 </div>
               )}
 
               <div className="h-px bg-slate-100" />
 
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-2 tracking-widest">
-                  Observații ședință
-                </label>
-                <div
-                  className={`p-5 rounded-[2.5rem] border text-[14px] leading-relaxed italic font-medium ${darkMode ? "text-slate-300" : "bg-slate-50 border-slate-100 text-slate-600"}`}
-                >
-                  {selectedSession.additional_info?.includes(" --- OBS: ")
-                    ? selectedSession.additional_info.split(" --- OBS: ")[1]
-                    : selectedSession.additional_info ||
-                      "Nu există observații."}
+              {/* OBSERVAȚII (Apare DOAR dacă s-a completat ceva) */}
+              {parsedModalNotes.obs && (
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase block mb-2 tracking-widest">
+                    Observații ședință
+                  </label>
+                  <div
+                    className={`p-5 rounded-[2.5rem] border text-[14px] leading-relaxed italic font-medium ${darkMode ? "text-slate-300" : "bg-slate-50 border-slate-100 text-slate-600"}`}
+                  >
+                    {parsedModalNotes.obs}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* INDICAȚII POST-OPERATORII (Apar DOAR dacă s-a completat ceva) */}
+              {selectedSession.indicatii_pacient && (
+                <div>
+                  <label className="text-[10px] font-bold text-[#556B2F] uppercase block mb-2 tracking-widest">
+                    Indicații post-operatorii
+                  </label>
+                  <div
+                    className={`p-5 rounded-[2.5rem] border text-[14px] leading-relaxed italic font-medium ${darkMode ? "text-[#556B2F] border-[#556B2F]/20 bg-[#556B2F]/10" : "bg-[#f2f6f0]/50 border-[#556B2F]/10 text-slate-700"}`}
+                  >
+                    {selectedSession.indicatii_pacient}
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-3xl border border-slate-100">
@@ -346,13 +425,23 @@ export default function HistorySection({
               </div>
             </div>
 
-            <div className="mt-10">
+            <div className="mt-10 flex flex-col gap-3">
               <button
                 onClick={() => setSelectedSession(null)}
-                className="w-full py-5 bg-[#556B2F] text-white rounded-[2rem] text-[12px] font-bold uppercase tracking-widest shadow-xl"
+                className="w-full py-5 bg-[#556B2F] text-white rounded-[2rem] text-[12px] font-bold uppercase tracking-widest shadow-xl transition-all hover:bg-[#4a5e29]"
               >
                 ÎNCHIDE FEREASTRA
               </button>
+
+              {selectedSession.procedure_name !==
+                "Înregistrare & Fișă Inițială" && (
+                <button
+                  onClick={() => handleDelete(selectedSession)}
+                  className="w-full py-4 border border-red-100 text-red-500 rounded-[2rem] text-[10px] font-bold uppercase flex items-center justify-center gap-2 hover:bg-red-50 transition-all"
+                >
+                  <Trash2 size={16} /> Șterge Ședința
+                </button>
+              )}
             </div>
           </div>
         </div>

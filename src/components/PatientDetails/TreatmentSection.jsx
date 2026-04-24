@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import {
   ChevronLeft,
@@ -6,6 +6,7 @@ import {
   Plus,
   CheckCircle2,
   Clock,
+  Loader2,
 } from "lucide-react";
 import ToothChart from "./ToothChart";
 import ToothNotes from "./ToothNotes";
@@ -34,6 +35,7 @@ export default function TreatmentSection({
   const [toothNotes, setToothNotes] = useState({});
   const [customProcedure, setCustomProcedure] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [newT, setNewT] = useState({
     name: "",
@@ -44,6 +46,25 @@ export default function TreatmentSection({
     indicatii_post: "",
     date: new Date().toISOString().split("T")[0],
   });
+
+  useEffect(() => {
+    if (continueFrom) {
+      setNewT({
+        name: continueFrom.procedure_name || "",
+        cost: continueFrom.total_cost || "",
+        paid: continueFrom.amount_paid || "",
+        status: continueFrom.status || "Finalizată",
+        note_doctor: continueFrom.additional_info || "",
+        indicatii_post: continueFrom.indicatii_pacient || "",
+        date:
+          continueFrom.treatment_date || new Date().toISOString().split("T")[0],
+      });
+      if (continueFrom.tooth_number) {
+        setSelectedTeeth(continueFrom.tooth_number.split(", "));
+      }
+      setStep(2);
+    }
+  }, [continueFrom]);
 
   const getFillColor = (fdiCode) =>
     selectedTeeth.includes(fdiCode) ? "#556B2F" : "#ffffff";
@@ -70,19 +91,14 @@ export default function TreatmentSection({
   };
 
   const save = async () => {
+    setLoading(true);
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const detailedToothNotes = Object.entries(toothNotes)
-      .filter(([_, n]) => n.trim() !== "")
-      .map(([t, n]) => `${t}: ${n}`)
-      .join(" | ");
-
-    const finalNotes = detailedToothNotes
-      ? `${detailedToothNotes}${newT.note_doctor ? " --- OBS: " + newT.note_doctor : ""}`
-      : newT.note_doctor;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const payload = {
       patient_id: patientId,
@@ -90,23 +106,37 @@ export default function TreatmentSection({
       procedure_name: newT.name,
       total_cost: parseFloat(newT.cost || 0),
       amount_paid: parseFloat(newT.paid || 0),
-      additional_info: finalNotes,
+
+      // AICI AM MODIFICAT: Se salvează DOAR observațiile și indicațiile pure,
+      // fără să se mai lipească cu forța notele dinților.
+      additional_info: newT.note_doctor || null,
       indicatii_pacient: newT.indicatii_post || null,
+
       status: newT.status,
       tooth_number: selectedTeeth.sort().join(", "),
+
+      // OPȚIONAL: Dacă ai în baza de date o coloană separată gen 'tooth_notes',
+      // poți decomenta linia de mai jos ca să le salvezi separat acolo:
+      // tooth_notes: Object.keys(toothNotes).length ? JSON.stringify(toothNotes) : null,
+
       treatment_date: newT.date,
       treatment_time: new Date().toLocaleTimeString("en-GB", {
         hour: "2-digit",
         minute: "2-digit",
       }),
-      // LOGICA DE STACKING:
       parent_id: continueFrom
         ? continueFrom.parent_id || continueFrom.id
         : null,
     };
 
     const { error } = await supabase.from("treatments").insert([payload]);
-    if (!error) onUpdate();
+
+    if (!error) {
+      onUpdate();
+    } else {
+      alert("Eroare la salvare: " + error.message);
+    }
+    setLoading(false);
   };
 
   return (
@@ -164,16 +194,15 @@ export default function TreatmentSection({
 
       {step === 2 && (
         <div className="space-y-6">
-          <div className="flex justify-between items-center border-b border-slate-50 pb-4">
-            <span className="text-[13px] font-bold text-[#556B2F] uppercase tracking-widest">
+          <div className="flex justify-between items-center border-b border-slate-50 pb-4 gap-2">
+            <span className="text-[13px] font-bold text-[#556B2F] uppercase tracking-widest truncate">
               {newT.name}
             </span>
             <button
               onClick={() => setStep(1)}
-              className="text-[10px] text-slate-400 uppercase tracking-widest flex items-center gap-1"
+              className="flex items-center gap-1 shrink-0 text-[10px] text-slate-400 uppercase tracking-widest font-bold"
             >
-              {" "}
-              <ChevronLeft size={12} /> Înapoi
+              <ChevronLeft size={14} /> Înapoi
             </button>
           </div>
           {!activeTooth ? (
@@ -208,15 +237,15 @@ export default function TreatmentSection({
 
       {step === 3 && (
         <div className="space-y-6 animate-in fade-in text-left">
-          <div className="flex justify-between items-center border-b border-slate-50 pb-4 text-slate-800">
-            <h4 className="text-[11px] font-medium uppercase text-[#556B2F] tracking-widest font-bold">
+          <div className="flex justify-between items-center border-b border-slate-50 pb-4 text-slate-800 gap-2">
+            <h4 className="text-[11px] font-bold uppercase text-[#556B2F] tracking-widest truncate">
               Detalii Finalizare
             </h4>
             <button
               onClick={() => setStep(2)}
-              className="text-[10px] text-slate-400 uppercase tracking-widest font-bold"
+              className="flex items-center gap-1 shrink-0 text-[10px] text-slate-400 uppercase tracking-widest font-bold"
             >
-              <ChevronLeft size={12} /> Înapoi
+              <ChevronLeft size={14} /> Înapoi
             </button>
           </div>
 
@@ -275,6 +304,7 @@ export default function TreatmentSection({
               placeholder="Note interne..."
             />
           </div>
+
           <div className="space-y-1 text-slate-800">
             <label className="text-[9px] font-bold text-[#556B2F] uppercase ml-1">
               Indicații post-operatorii
@@ -291,9 +321,14 @@ export default function TreatmentSection({
 
           <button
             onClick={save}
-            className="w-full py-4 bg-[#556B2F] text-white rounded-xl font-bold uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all"
+            disabled={loading}
+            className="w-full py-4 bg-[#556B2F] text-white rounded-xl font-bold uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
           >
-            Salvează în fișă
+            {loading ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : (
+              "Salvează în fișă"
+            )}
           </button>
         </div>
       )}

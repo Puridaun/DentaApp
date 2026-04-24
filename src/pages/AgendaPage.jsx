@@ -19,9 +19,11 @@ export default function AgendaPage({ darkMode }) {
     time: "08:00",
     endTime: "21:00",
     patientId: "",
+    customName: "",
     procedure: "",
     doctorId: "",
     notes: "",
+    attendance_status: "Programat", // Noua stare
   });
 
   const fetchData = useCallback(async () => {
@@ -51,8 +53,6 @@ export default function AgendaPage({ darkMode }) {
 
   useEffect(() => {
     fetchData();
-
-    // Realtime: Actualizează agenda dacă altcineva face o modificare
     const channel = supabase
       .channel("db-changes")
       .on(
@@ -61,7 +61,6 @@ export default function AgendaPage({ darkMode }) {
         () => fetchData(),
       )
       .subscribe();
-
     return () => supabase.removeChannel(channel);
   }, [fetchData]);
 
@@ -88,13 +87,15 @@ export default function AgendaPage({ darkMode }) {
       return;
 
     const payload = {
-      patient_id: form.patientId,
+      patient_id: form.patientId || null,
+      temp_patient_name: !form.patientId ? form.customName : null,
       doctor_id: form.doctorId,
       appointment_date: currentDate.toISOString().split("T")[0],
       start_time: form.time.substring(0, 5) + ":00",
       end_time: form.endTime.substring(0, 5) + ":00",
       procedure_name: form.procedure,
       notes: form.notes,
+      attendance_status: form.attendance_status, // Noua coloana
     };
 
     const { data, error } = editingId
@@ -111,6 +112,9 @@ export default function AgendaPage({ darkMode }) {
         const patientObj = patients.find(
           (p) => String(p.id) === String(form.patientId),
         );
+        const displayPatientName = patientObj
+          ? patientObj.full_name
+          : form.customName;
         const doctorObj = doctors.find(
           (d) => String(d.id) === String(form.doctorId),
         );
@@ -120,13 +124,13 @@ export default function AgendaPage({ darkMode }) {
             date: payload.appointment_date,
             time: payload.start_time,
             procedure_name: payload.procedure_name,
-            patient_name: patientObj ? patientObj.full_name : "Pacient",
+            patient_name: displayPatientName || "Pacient",
             note: payload.notes,
           },
           doctorObj?.calendar_email,
         );
       } catch (calErr) {
-        console.error("Google Sync Error:", calErr);
+        console.error(calErr);
       }
       setShowModal(false);
       fetchData();
@@ -137,11 +141,13 @@ export default function AgendaPage({ darkMode }) {
     setEditingId(null);
     setForm({
       time: ora || "08:00",
-      endTime: "21:00",
+      endTime: "09:00",
       patientId: "",
+      customName: "",
       procedure: "",
       doctorId: doctors[0]?.id || "",
       notes: "",
+      attendance_status: "Programat",
     });
     setShowModal(true);
   };
@@ -151,10 +157,12 @@ export default function AgendaPage({ darkMode }) {
     setForm({
       time: appt.start_time.substring(0, 5),
       endTime: appt.end_time.substring(0, 5),
-      patientId: appt.patient_id,
+      patientId: appt.patient_id || "",
+      customName: appt.temp_patient_name || "",
       procedure: appt.procedure_name,
       doctorId: appt.doctor_id,
       notes: appt.notes || "",
+      attendance_status: appt.attendance_status || "Programat",
     });
     setShowModal(true);
   };
